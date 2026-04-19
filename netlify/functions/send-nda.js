@@ -98,8 +98,10 @@ async function createEnvelope(accessToken, investor, cfg) {
         email:        investor.email,
         routingOrder: '1',
         tabs: {
+          nameTabs: [
+            { tabLabel: 'Investor Name', value: investor.name }
+                      ],
           textTabs: [
-            { tabLabel: 'Investor Name',    value: investor.name    },
             { tabLabel: 'Investor Address', value: investor.address || '' },
             { tabLabel: 'Phone',            value: investor.phone   || '' }
           ]
