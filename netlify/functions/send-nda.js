@@ -2,18 +2,17 @@
  * HealthCred — Bridge Round Investor Portal
  * Netlify Function: send-nda.js
  *
- * Handles DocuSign envelope creation + embedded signing URL for the investor NDA gate.
- * Returns a signingUrl that the portal immediately redirects the investor to.
+ * Handles DocuSign envelope creation for the investor NDA gate.
+ * Uses remote/email signing — DocuSign emails the investor directly.
  *
- * Environment variables to configure in Netlify dashboard:
+ * Environment variables:
  *   DOCUSIGN_ACCOUNT_ID        = 1dab0a51-af7c-463b-a3d2-955fa2b8d354
  *   DOCUSIGN_INTEGRATION_KEY   = 244c70f1-da74-4943-a9e0-8507101c8128
  *   DOCUSIGN_USER_ID           = a22f1670-1914-4a1c-b901-915b82c17dfc
  *   DOCUSIGN_PRIVATE_KEY       = (RSA private key, base64 encoded)
- *   DOCUSIGN_TEMPLATE_ID       = (NDA template ID in production DocuSign)
+ *   DOCUSIGN_TEMPLATE_ID       = (NDA template ID in DocuSign)
  *   DOCUSIGN_BASE_URL          = https://na4.docusign.net/restapi
  *   DOCUSIGN_OAUTH_URL         = https://account.docusign.com
- *   DOCUSIGN_RETURN_URL        = https://bridge.healthcred.com/?signed=true
  *   NOTIFICATION_EMAIL         = chad@healthcred.com
  */
 
@@ -26,14 +25,13 @@ function getConfig() {
     USER_ID:         process.env.DOCUSIGN_USER_ID,
     PRIVATE_KEY_B64: process.env.DOCUSIGN_PRIVATE_KEY,
     TEMPLATE_ID:     process.env.DOCUSIGN_TEMPLATE_ID,
-    BASE_URL:        process.env.DOCUSIGN_BASE_URL    || 'https://na4.docusign.net/restapi',
-    OAUTH_URL:       process.env.DOCUSIGN_OAUTH_URL   || 'https://account.docusign.com',
-    RETURN_URL:      process.env.DOCUSIGN_RETURN_URL  || 'https://bridge.healthcred.com/?signed=true',
+    BASE_URL:        process.env.DOCUSIGN_BASE_URL  || 'https://na4.docusign.net/restapi',
+    OAUTH_URL:       process.env.DOCUSIGN_OAUTH_URL || 'https://account.docusign.com',
   };
 }
 
 function base64url(buf) {
-  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return buf.toString('base64').replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/=/g, '');
 }
 
 function makeJWT(cfg) {
@@ -49,9 +47,9 @@ function makeJWT(cfg) {
     exp: now + 3600,
     scope: 'signature impersonation'
   })));
-  const sigInput = `${header}.${payload}`;
+  const sigInput = header + '.' + payload;
   const sig = base64url(crypto.sign('sha256', Buffer.from(sigInput), { key: privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }));
-  return `${sigInput}.${sig}`;
+  return sigInput + '.' + sig;
 }
 
 function httpsPost(hostname, path, headers, body) {
@@ -73,12 +71,12 @@ function httpsPost(hostname, path, headers, body) {
 
 async function getAccessToken(cfg) {
   const jwt = makeJWT(cfg);
-  const body = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`;
+  const body = 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=' + jwt;
   const oauthHost = new URL(cfg.OAUTH_URL).hostname;
   const res = await httpsPost(oauthHost, '/oauth/token', {
     'Content-Type': 'application/x-www-form-urlencoded'
   }, body);
-  if (res.status !== 200) throw new Error(`OAuth failed: ${JSON.stringify(res.body)}`);
+  if (res.status !== 200) throw new Error('OAuth failed: ' + JSON.stringify(res.body));
   return res.body.access_token;
 }
 
@@ -86,8 +84,8 @@ async function createEnvelope(accessToken, investor, cfg) {
   const apiHost = new URL(cfg.BASE_URL).hostname;
   const CHAD_NAME  = 'Chad R. LaBoy';
   const CHAD_EMAIL = process.env.NOTIFICATION_EMAIL || 'chad@healthcred.com';
-  const CLIENT_USER_ID = `investor-${Date.now()}`;
 
+  // No clientUserId = remote/email signing: DocuSign emails the investor directly
   const envelope = {
     templateId: cfg.TEMPLATE_ID,
     templateRoles: [
@@ -95,7 +93,6 @@ async function createEnvelope(accessToken, investor, cfg) {
         roleName:     'Signer',
         name:         investor.name,
         email:        investor.email,
-        clientUserId: CLIENT_USER_ID,
         routingOrder: '1',
         tabs: {
           textTabs: [
@@ -113,35 +110,17 @@ async function createEnvelope(accessToken, investor, cfg) {
       }
     ],
     emailSubject: 'HealthCred Care LLC — Non-Disclosure Agreement',
-    emailBlurb:   `${investor.name}, please review and sign the enclosed Non-Disclosure Agreement to access HealthCred's private investor materials.`,
+    emailBlurb:   investor.name + ', please review and sign the enclosed Non-Disclosure Agreement to access HealthCred private investor materials.',
     status: 'sent'
   };
 
   const res = await httpsPost(apiHost,
-    `/restapi/v2.1/accounts/${cfg.ACCOUNT_ID}/envelopes`,
-    { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    '/restapi/v2.1/accounts/' + cfg.ACCOUNT_ID + '/envelopes',
+    { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
     envelope
   );
-  if (res.status !== 201) throw new Error(`Envelope creation failed: ${JSON.stringify(res.body)}`);
-  return { envelopeId: res.body.envelopeId, clientUserId: CLIENT_USER_ID };
-}
-
-async function getRecipientViewUrl(accessToken, envelopeId, investor, clientUserId, cfg) {
-  const apiHost = new URL(cfg.BASE_URL).hostname;
-  const viewRequest = {
-    returnUrl:            cfg.RETURN_URL,
-    authenticationMethod: 'none',
-    email:                investor.email,
-    userName:             investor.name,
-    clientUserId:         clientUserId,
-  };
-  const res = await httpsPost(apiHost,
-    `/restapi/v2.1/accounts/${cfg.ACCOUNT_ID}/envelopes/${envelopeId}/views/recipient`,
-    { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    viewRequest
-  );
-  if (res.status !== 201) throw new Error(`Recipient view failed: ${JSON.stringify(res.body)}`);
-  return res.body.url;
+  if (res.status !== 201) throw new Error('Envelope creation failed: ' + JSON.stringify(res.body));
+  return res.body.envelopeId;
 }
 
 exports.handler = async (event) => {
@@ -165,10 +144,10 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Name and email are required' }) };
     }
 
-    console.log('ENV CHECK — INTEGRATION_KEY:', cfg.INTEGRATION_KEY ? `set (${cfg.INTEGRATION_KEY.substring(0,8)}...)` : 'MISSING');
-    console.log('ENV CHECK — PRIVATE_KEY_B64:', cfg.PRIVATE_KEY_B64 ? `set (${cfg.PRIVATE_KEY_B64.length} chars)` : 'MISSING');
+    console.log('ENV CHECK — INTEGRATION_KEY:', cfg.INTEGRATION_KEY ? 'set' : 'MISSING');
+    console.log('ENV CHECK — PRIVATE_KEY_B64:', cfg.PRIVATE_KEY_B64 ? cfg.PRIVATE_KEY_B64.length + ' chars' : 'MISSING');
     console.log('ENV CHECK — ACCOUNT_ID:', cfg.ACCOUNT_ID ? 'set' : 'MISSING');
-    console.log('ENV CHECK — TEMPLATE_ID:', cfg.TEMPLATE_ID ? cfg.TEMPLATE_ID : 'MISSING');
+    console.log('ENV CHECK — TEMPLATE_ID:', cfg.TEMPLATE_ID || 'MISSING');
 
     if (!cfg.INTEGRATION_KEY || !cfg.PRIVATE_KEY_B64 || !cfg.TEMPLATE_ID) {
       return {
@@ -186,13 +165,13 @@ exports.handler = async (event) => {
     }
 
     const token = await getAccessToken(cfg);
-    const { envelopeId, clientUserId } = await createEnvelope(token, { name, email, phone, address }, cfg);
-    const signingUrl = await getRecipientViewUrl(token, envelopeId, { name, email }, clientUserId, cfg);
+    const envelopeId = await createEnvelope(token, { name, email, phone, address }, cfg);
+    console.log('Envelope created:', envelopeId, '— DocuSign email sent to:', email);
 
     return {
       statusCode: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, envelopeId, signingUrl })
+      body: JSON.stringify({ success: true, envelopeId })
     };
 
   } catch (err) {
