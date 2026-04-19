@@ -48,7 +48,10 @@ function makeJWT(cfg) {
     scope: 'signature impersonation'
   })));
   const sigInput = header + '.' + payload;
-  const sig = base64url(crypto.sign('sha256', Buffer.from(sigInput), { key: privateKey, padding: crypto.constants.RSA_PKCS1_PADDING }));
+  // Use createSign for OpenSSL 3.x / Node 18+ compatibility with PKCS#1 RSA keys
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(sigInput);
+  const sig = base64url(signer.sign(privateKey));
   return sigInput + '.' + sig;
 }
 
