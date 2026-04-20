@@ -118,10 +118,10 @@ async function createEnvelope(accessToken, investor, cfg) {
                       { tabLabel: 'Investor Name', value: investor.name }
                     ],
                     textTabs: [
-                      // Page 1 — wide address field (437px, tabId from template)
-                      { tabId: 'ed4bc1e7-fdef-4e01-9db3-4eff42e2df74', value: investor.address || '' },
-                      // Page 10 — secondary field near signature (phone/title)
-                      { tabId: '471a7244-8d13-4c92-9869-088c968cfa0a', value: investor.phone || investor.address || '' }
+                      // Page 1 — wide address field (437px) — tabLabel is stable template label
+                      { tabLabel: 'Text ae802107-75ee-47bd-a9ec-694345fcbdd3', value: investor.address || '' },
+                      // Page 10 — field near signature (phone/title) — tabLabel is stable template label
+                      { tabLabel: 'Text fa155aa7-07cf-4b92-853f-32c1869c96f6', value: investor.phone || investor.address || '' }
                     ]
                   }
                 },
