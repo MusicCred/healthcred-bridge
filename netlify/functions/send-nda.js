@@ -51,6 +51,7 @@ function makeJWT(cfg) {
     scope: 'signature impersonation'
   })));
   const sigInput = `${header}.${payload}`;
+  // Use createSign for OpenSSL 3.x / Node 18+ compatibility with PKCS#1 RSA keys
   const signer = crypto.createSign('RSA-SHA256');
   signer.update(sigInput);
   const sig = base64url(signer.sign(privateKey));
@@ -112,12 +113,15 @@ async function createEnvelope(accessToken, investor, cfg) {
                   name:         investor.name,
                   email:        investor.email,
                   tabs: {
+                    // fullName tabs auto-populate from recipient name — specifying explicitly as backup
                     nameTabs: [
                       { tabLabel: 'Investor Name', value: investor.name }
                     ],
                     textTabs: [
-                      { tabLabel: 'Investor Address', value: investor.address || '' },
-                      { tabLabel: 'Phone',            value: investor.phone   || '' }
+                      // Page 1 — wide address field (437px, tabId from template)
+                      { tabId: 'ed4bc1e7-fdef-4e01-9db3-4eff42e2df74', value: investor.address || '' },
+                      // Page 10 — secondary field near signature (phone/title)
+                      { tabId: '471a7244-8d13-4c92-9869-088c968cfa0a', value: investor.phone || investor.address || '' }
                     ]
                   }
                 },
