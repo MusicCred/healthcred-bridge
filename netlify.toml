@@ -1,1 +1,31 @@
+[build]
+  command   = ""
+  publish   = "."
+  functions = "netlify/functions"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[redirects]]
+  from   = "/send-nda"
+  to     = "/.netlify/functions/send-nda"
+  status = 200
+
+[[redirects]]
+  from   = "/check-nda"
+  to     = "/.netlify/functions/check-nda"
+  status = 200
+
+[[redirects]]
+  from   = "/send-lead"
+  to     = "/.netlify/functions/send-lead"
+  status = 200
+
+[[redirects]]
+  from   = "/docusign-webhook"
+  to     = "/.netlify/functions/docusign-webhook"
+  status = 200
