@@ -2,17 +2,18 @@
  * HealthCred — Bridge Round Investor Portal
  * Netlify Function: send-nda.js
  *
- * Handles DocuSign envelope creation for the investor NDA gate.
- * Uses remote/email signing — DocuSign emails the investor directly.
+ * Handles DocuSign envelope creation + embedded signing URL for the investor NDA gate.
+ * Returns a signingUrl that the portal immediately redirects the investor to.
  *
- * Environment variables:
- *   DOCUSIGN_ACCOUNT_ID        = 1dab0a51-af7c-463b-a3d2-955fa2b8d354
+ * Environment variables to configure in Netlify dashboard:
+ *   DOCUSIGN_ACCOUNT_ID        = 1dab0a51-af7c-463b-a3d2-955fa2b8d354  ✓ verified via getUserInfo
  *   DOCUSIGN_INTEGRATION_KEY   = 244c70f1-da74-4943-a9e0-8507101c8128
- *   DOCUSIGN_USER_ID           = a22f1670-1914-4a1c-b901-915b82c17dfc
+ *   DOCUSIGN_USER_ID           = a22f1670-1914-4a1c-b901-915b82c17dfc  ✓ verified via getUserInfo (chad@healthcredcare.com)
  *   DOCUSIGN_PRIVATE_KEY       = (RSA private key, base64 encoded)
- *   DOCUSIGN_TEMPLATE_ID       = (NDA template ID in DocuSign)
+ *   DOCUSIGN_TEMPLATE_ID       = (NDA template ID in production DocuSign)
  *   DOCUSIGN_BASE_URL          = https://na4.docusign.net/restapi
  *   DOCUSIGN_OAUTH_URL         = https://account.docusign.com
+ *   DOCUSIGN_RETURN_URL        = https://bridge.healthcred.com/?signed=true
  *   NOTIFICATION_EMAIL         = chad@healthcred.com
  */
 
@@ -25,13 +26,15 @@ function getConfig() {
     USER_ID:         process.env.DOCUSIGN_USER_ID,
     PRIVATE_KEY_B64: process.env.DOCUSIGN_PRIVATE_KEY,
     TEMPLATE_ID:     process.env.DOCUSIGN_TEMPLATE_ID,
-    BASE_URL:        process.env.DOCUSIGN_BASE_URL  || 'https://na4.docusign.net/restapi',
-    OAUTH_URL:       process.env.DOCUSIGN_OAUTH_URL || 'https://account.docusign.com',
+    BASE_URL:        process.env.DOCUSIGN_BASE_URL    || 'https://na4.docusign.net/restapi',
+    OAUTH_URL:       process.env.DOCUSIGN_OAUTH_URL   || 'https://account.docusign.com',
+    RETURN_URL:      process.env.DOCUSIGN_RETURN_URL  || 'https://bridge.healthcred.com/?signed=true',
   };
 }
 
+// ── JWT Token helper ────────────────────────────────────────────────────────
 function base64url(buf) {
-  return buf.toString('base64').replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/=/g, '');
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 function makeJWT(cfg) {
@@ -47,12 +50,11 @@ function makeJWT(cfg) {
     exp: now + 3600,
     scope: 'signature impersonation'
   })));
-  const sigInput = header + '.' + payload;
-  // Use createSign for OpenSSL 3.x / Node 18+ compatibility with PKCS#1 RSA keys
+  const sigInput = `${header}.${payload}`;
   const signer = crypto.createSign('RSA-SHA256');
   signer.update(sigInput);
   const sig = base64url(signer.sign(privateKey));
-  return sigInput + '.' + sig;
+  return `${sigInput}.${sig}`;
 }
 
 function httpsPost(hostname, path, headers, body) {
@@ -74,12 +76,12 @@ function httpsPost(hostname, path, headers, body) {
 
 async function getAccessToken(cfg) {
   const jwt = makeJWT(cfg);
-  const body = 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=' + jwt;
+  const body = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`;
   const oauthHost = new URL(cfg.OAUTH_URL).hostname;
   const res = await httpsPost(oauthHost, '/oauth/token', {
     'Content-Type': 'application/x-www-form-urlencoded'
   }, body);
-  if (res.status !== 200) throw new Error('OAuth failed: ' + JSON.stringify(res.body));
+  if (res.status !== 200) throw new Error(`OAuth failed: ${JSON.stringify(res.body)}`);
   return res.body.access_token;
 }
 
@@ -88,46 +90,65 @@ async function createEnvelope(accessToken, investor, cfg) {
   const CHAD_NAME  = 'Chad R. LaBoy';
   const CHAD_EMAIL = process.env.NOTIFICATION_EMAIL || 'chad@healthcred.com';
 
-  // No clientUserId = remote/email signing: DocuSign emails the investor directly
+  // Use compositeTemplates instead of templateRoles.
+  // This pulls the NDA document from the DocuSign template but supplies
+  // its OWN recipient list via inlineTemplates (sequence 2 > sequence 1),
+  // completely bypassing any hardcoded recipients in the template.
   const envelope = {
-    templateId: cfg.TEMPLATE_ID,
-    templateRoles: [
+    compositeTemplates: [
       {
-        roleName:     'Signer',
-        name:         investor.name,
-        email:        investor.email,
-        routingOrder: '1',
-        tabs: {
-          nameTabs: [
-            { tabLabel: 'Investor Name', value: investor.name }
-                      ],
-          textTabs: [
-            { tabLabel: 'Investor Address', value: investor.address || '' },
-            { tabLabel: 'Phone',            value: investor.phone   || '' }
-          ]
-        }
-      },
-      {
-        roleName:     'HealthCred Representative',
-        name:         CHAD_NAME,
-        email:        CHAD_EMAIL,
-        routingOrder: '2'
+        serverTemplates: [
+          { sequence: '1', templateId: cfg.TEMPLATE_ID }
+        ],
+        inlineTemplates: [
+          {
+            sequence: '2',
+            recipients: {
+              signers: [
+                {
+                  recipientId:  '1',
+                  routingOrder: '1',
+                  roleName:     'Signer',
+                  name:         investor.name,
+                  email:        investor.email,
+                  tabs: {
+                    nameTabs: [
+                      { tabLabel: 'Investor Name', value: investor.name }
+                    ],
+                    textTabs: [
+                      { tabLabel: 'Investor Address', value: investor.address || '' },
+                      { tabLabel: 'Phone',            value: investor.phone   || '' }
+                    ]
+                  }
+                },
+                {
+                  recipientId:  '2',
+                  routingOrder: '2',
+                  roleName:     'HealthCred Representative',
+                  name:         CHAD_NAME,
+                  email:        CHAD_EMAIL
+                }
+              ]
+            }
+          }
+        ]
       }
     ],
-    emailSubject: 'HealthCred Care LLC — Non-Disclosure Agreement',
-    emailBlurb:   investor.name + ', please review and sign the enclosed Non-Disclosure Agreement to access HealthCred private investor materials.',
+    emailSubject: `HealthCred Care LLC — Non-Disclosure Agreement`,
+    emailBlurb:   `${investor.name}, please review and sign the enclosed Non-Disclosure Agreement to access HealthCred's private investor materials.`,
     status: 'sent'
   };
 
   const res = await httpsPost(apiHost,
-    '/restapi/v2.1/accounts/' + cfg.ACCOUNT_ID + '/envelopes',
-    { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    `/restapi/v2.1/accounts/${cfg.ACCOUNT_ID}/envelopes`,
+    { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
     envelope
   );
-  if (res.status !== 201) throw new Error('Envelope creation failed: ' + JSON.stringify(res.body));
+  if (res.status !== 201) throw new Error(`Envelope creation failed: ${JSON.stringify(res.body)}`);
   return res.body.envelopeId;
 }
 
+// ── Netlify handler ─────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin':  '*',
@@ -149,10 +170,11 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: 'Name and email are required' }) };
     }
 
-    console.log('ENV CHECK — INTEGRATION_KEY:', cfg.INTEGRATION_KEY ? 'set' : 'MISSING');
-    console.log('ENV CHECK — PRIVATE_KEY_B64:', cfg.PRIVATE_KEY_B64 ? cfg.PRIVATE_KEY_B64.length + ' chars' : 'MISSING');
+    console.log('ENV CHECK — INTEGRATION_KEY:', cfg.INTEGRATION_KEY ? `set (${cfg.INTEGRATION_KEY.substring(0,8)}...)` : 'MISSING');
+    console.log('ENV CHECK — PRIVATE_KEY_B64:', cfg.PRIVATE_KEY_B64 ? `set (${cfg.PRIVATE_KEY_B64.length} chars)` : 'MISSING');
     console.log('ENV CHECK — ACCOUNT_ID:', cfg.ACCOUNT_ID ? 'set' : 'MISSING');
-    console.log('ENV CHECK — TEMPLATE_ID:', cfg.TEMPLATE_ID || 'MISSING');
+    console.log('ENV CHECK — TEMPLATE_ID:', cfg.TEMPLATE_ID ? cfg.TEMPLATE_ID : 'MISSING');
+    console.log('ENV CHECK — USER_ID:', cfg.USER_ID ? `set (${cfg.USER_ID.substring(0,8)}...)` : 'MISSING');
 
     if (!cfg.INTEGRATION_KEY || !cfg.PRIVATE_KEY_B64 || !cfg.TEMPLATE_ID) {
       return {
@@ -171,6 +193,7 @@ exports.handler = async (event) => {
 
     const token = await getAccessToken(cfg);
     const envelopeId = await createEnvelope(token, { name, email, phone, address }, cfg);
+
     console.log('Envelope created:', envelopeId, '— DocuSign email sent to:', email);
 
     return {
