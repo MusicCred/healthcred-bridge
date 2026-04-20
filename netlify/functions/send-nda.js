@@ -124,14 +124,10 @@ async function createEnvelope(accessToken, investor, cfg) {
                       { tabLabel: 'Text fa155aa7-07cf-4b92-853f-32c1869c96f6', value: investor.phone || investor.address || '' }
                     ]
                   }
-                },
-                {
-                  recipientId:  '2',
-                  routingOrder: '2',
-                  roleName:     'HealthCred Representative',
-                  name:         CHAD_NAME,
-                  email:        CHAD_EMAIL
                 }
+                // NOTE: HealthCred Representative (Chad) is hardcoded in the DocuSign template.
+                // Do NOT specify recipient 2 here — adding it creates a duplicate signer and
+                // prevents the envelope from ever reaching "completed" status.
               ]
             }
           }
