@@ -4622,5 +4622,99 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+
+<!-- Visual Enhancements: Prompts 5-9 -->
+<style>
+.ep-flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;margin:32px 0;padding:24px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(201,168,76,0.1)}
+.ep-node{display:flex;flex-direction:column;align-items:center;gap:6px}
+.ep-icon{width:52px;height:52px;border-radius:50%;border:1.5px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;animation:nodePulse 3s ease-in-out infinite}
+.ep-node:nth-child(1) .ep-icon{animation-delay:0s}
+.ep-node:nth-child(3) .ep-icon{animation-delay:0.6s}
+.ep-node:nth-child(5) .ep-icon{animation-delay:1.2s}
+.ep-node:nth-child(7) .ep-icon{animation-delay:1.8s}
+.ep-node:nth-child(9) .ep-icon{animation-delay:2.4s}
+.ep-label{font-size:9px;color:var(--gray2);text-align:center;max-width:64px;line-height:1.3;text-transform:uppercase;letter-spacing:0.5px}
+.ep-arr{font-size:16px;color:var(--gold);opacity:0.5;margin-top:-18px;flex-shrink:0}
+@keyframes nodePulse{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.25)}50%{box-shadow:0 0 0 10px rgba(201,168,76,0)}}
+.sm-wrap{max-width:500px;margin:32px auto;text-align:center}
+.sm-active{animation:stateGlow 2.5s ease-in-out infinite}
+.sm-next{stroke-dasharray:5,3}
+@keyframes stateGlow{0%,100%{opacity:0.8}50%{opacity:1;filter:drop-shadow(0 0 6px rgba(201,168,76,0.5))}}
+.live-num{display:inline-block}
+</style><script>
+(function(){
+function injectPipeline(){
+  var t=document.getElementById('traction');if(!t)return;
+  var c=t.querySelector('.container');if(!c)return;
+  var d=c.querySelector('.divider');
+  var tmp=document.createElement('div');
+  tmp.innerHTML='<div class="ep-flow fade-up"><div class="ep-node"><div class="ep-icon">&#127963;</div><div class="ep-label">Facility Contract</div></div><span class="ep-arr">&#8594;</span><div class="ep-node"><div class="ep-icon">&#128203;</div><div class="ep-label">Eligibility Screen</div></div><span class="ep-arr">&#8594;</span><div class="ep-node"><div class="ep-icon">&#128221;</div><div class="ep-label">ACA Application</div></div><span class="ep-arr">&#8594;</span><div class="ep-node"><div class="ep-icon">&#128682;</div><div class="ep-label">Release &amp; Activate</div></div><span class="ep-arr">&#8594;</span><div class="ep-node"><div class="ep-icon">&#128176;</div><div class="ep-label">Carrier Commission</div></div></div>';
+  var node=tmp.firstChild;
+  if(d&&d.nextSibling){c.insertBefore(node,d.nextSibling);}else{c.appendChild(node);}
+}
+function injectStateMap(){
+  var m=document.getElementById('market');if(!m)return;
+  var c=m.querySelector('.container');if(!c)return;
+  var w=document.createElement('div');
+  w.className='sm-wrap fade-up';
+  w.innerHTML='<div style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Active Footprint &#8212; Expanding</div>'
+    +'<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:480px;overflow:visible">'
+    +'<path class="sm-active" d="M320,175 L378,177 L392,205 L385,255 L362,272 L338,268 L328,248 L338,225 L332,205 Z" fill="rgba(201,168,76,0.55)" stroke="#C9A84C" stroke-width="1.5"/>'
+    +'<text x="355" y="228" text-anchor="middle" fill="#E8C96A" font-size="12" font-weight="700">FL</text>'
+    +'<path class="sm-active" d="M295,145 L355,147 L352,177 L320,175 L305,165 Z" fill="rgba(201,168,76,0.42)" stroke="#C9A84C" stroke-width="1.5"/>'
+    +'<text x="328" y="164" text-anchor="middle" fill="#E8C96A" font-size="12" font-weight="700">GA</text>'
+    +'<path class="sm-active" d="M270,145 L295,145 L305,165 L320,175 L318,198 L285,196 L268,170 Z" fill="rgba(201,168,76,0.42)" stroke="#C9A84C" stroke-width="1.5"/>'
+    +'<text x="290" y="174" text-anchor="middle" fill="#E8C96A" font-size="12" font-weight="700">AL</text>'
+    +'<path d="M215,98 L270,100 L270,145 L268,170 L248,173 L222,152 L210,128 Z" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>'
+    +'<text x="240" y="132" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="9">MS</text>'
+    +'<path d="M270,58 L355,60 L352,100 L295,100 L270,100 Z" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>'
+    +'<text x="310" y="82" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="9">TN</text>'
+    +'<path d="M355,20 L445,22 L445,60 L355,60 Z" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>'
+    +'<text x="398" y="44" text-anchor="middle" fill="rgba(255,255,255,0.22)" font-size="9">NC/SC</text>'
+    +'<path class="sm-next" d="M60,115 L178,118 L182,178 L162,218 L105,228 L62,208 L48,168 Z" fill="rgba(201,168,76,0.1)" stroke="rgba(201,168,76,0.5)" stroke-width="1.5"/>'
+    +'<text x="115" y="172" text-anchor="middle" fill="rgba(201,168,76,0.6)" font-size="12" font-weight="600">TX</text>'
+    +'<text x="115" y="186" text-anchor="middle" fill="rgba(201,168,76,0.45)" font-size="8">Bridge Target</text>'
+    +'<rect x="10" y="274" width="10" height="10" rx="2" fill="rgba(201,168,76,0.55)"/>'
+    +'<text x="24" y="283" fill="rgba(200,200,200,0.6)" font-size="9">Active &#8212; 54 facilities, 3 states</text>'
+    +'<rect x="220" y="274" width="10" height="10" rx="2" fill="rgba(201,168,76,0.1)" stroke="rgba(201,168,76,0.5)" stroke-width="1"/>'
+    +'<text x="234" y="283" fill="rgba(200,200,200,0.6)" font-size="9">Bridge Expansion</text>'
+    +'</svg>';
+  c.appendChild(w);
+}
+function initNumCounters(){
+  [['9,217',9217],['29,856',29856]].forEach(function(pair){
+    var text=pair[0],val=pair[1];
+    var walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null,false);
+    var node;
+    while((node=walker.nextNode())){
+      if(node.textContent.trim()===text){
+        var span=document.createElement('span');
+        span.className='live-num';
+        span.textContent=text;
+        node.parentNode.replaceChild(span,node);
+        var done=false;
+        (function(s,v){
+          var io=new IntersectionObserver(function(entries){
+            if(entries[0].isIntersecting&&!done){
+              done=true;io.disconnect();
+              var start=performance.now(),dur=1600;
+              function tick(now){
+                var p=Math.min((now-start)/dur,1),e=p<0.5?2*p*p:-1+(4-2*p)*p;
+                s.textContent=Math.round(e*v).toLocaleString('en-US');
+                if(p<1)requestAnimationFrame(tick);
+              }
+              requestAnimationFrame(tick);
+            }
+          },{threshold:0.5});
+          io.observe(s);
+        })(span,val);
+        break;
+      }
+    }
+  });
+}
+setTimeout(function(){injectPipeline();injectStateMap();initNumCounters();},500);
+})();
+</script>
 </body>
 </html>
