@@ -4165,13 +4165,13 @@ function showPortal() {
 
 // ── ACTIVE VIEWERS INDICATOR ────────────────────────────────────────
 function initViewerCount() {
-  const el   = document.getElementById('nav-viewers');
-  const text = document.getElementById('nav-viewers-text');
+  const el   = document.getElementById('floating-viewers');
+  const text = document.getElementById('floating-viewers-text');
   if (!el || !text) return;
 
   let count = 2 + Math.floor(Math.random() * 3);
   text.textContent = count + ' investor' + (count !== 1 ? 's' : '') + ' viewing';
-  el.style.display = 'flex';
+  setTimeout(() => { el.style.display = 'flex'; }, 2000);
 
   setInterval(() => {
     const delta = Math.random() < 0.5 ? -1 : 1;
@@ -5110,3 +5110,7 @@ window.showPortal = function() {
 </script>
 </body>
 </html>
+
+.floating-viewers { position:fixed; bottom:24px; right:24px; z-index:8000; display:none; align-items:center; gap:8px; background:rgba(13,27,42,0.92); border:1px solid rgba(46,204,113,0.35); border-radius:24px; padding:8px 16px; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:0 4px 24px rgba(0,0,0,0.4); }
+.floating-viewers-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; flex-shrink:0; }
+.floating-viewers-text { font-size:12px; color:rgba(46,204,113,0.9); letter-spacing:0.3px; white-space:nowrap; font-weight:500; }
