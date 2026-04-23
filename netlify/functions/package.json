@@ -1,9 +1,5 @@
 {
   "name": "healthcred-bridge-functions",
   "version": "1.0.0",
-  "description": "Netlify serverless functions for HealthCred Bridge Round investor portal",
-  "dependencies": {
-    "nodemailer": "^6.9.13",
-    "@netlify/blobs": "^8.1.0"
-  }
+  "description": "Netlify serverless functions for HealthCred Bridge Round investor portal"
 }
