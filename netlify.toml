@@ -29,3 +29,28 @@
   from   = "/docusign-webhook"
   to     = "/.netlify/functions/docusign-webhook"
   status = 200
+
+[[redirects]]
+  from   = "/investor-profile"
+  to     = "/.netlify/functions/investor-profile"
+  status = 200
+
+[[redirects]]
+  from   = "/magic-link"
+  to     = "/.netlify/functions/magic-link"
+  status = 200
+
+[[redirects]]
+  from   = "/track-progress"
+  to     = "/.netlify/functions/track-progress"
+  status = 200
+
+[[redirects]]
+  from   = "/admin-profiles"
+  to     = "/.netlify/functions/admin-profiles"
+  status = 200
+
+[[redirects]]
+  from   = "/admin"
+  to     = "/admin.html"
+  status = 200

@@ -17,7 +17,9 @@
  *   NOTIFICATION_EMAIL         = chad@healthcred.com
  */
 
-const https = require('https');
+const https  = require('https');
+const crypto = require('crypto');
+const { getStore } = require('@netlify/blobs');
 
 function getConfig() {
   return {
@@ -195,6 +197,27 @@ exports.handler = async (event) => {
     const envelopeId = await createEnvelope(token, { name, email, phone, address }, cfg);
 
     console.log('Envelope created:', envelopeId, '— DocuSign email sent to:', email);
+
+    // ── Create initial investor profile record ────────────────────────────
+    try {
+      const profileStore = getStore({ name: 'investor-profiles', consistency: 'strong' });
+      const emailHash    = crypto.createHash('sha256')
+        .update(email.toLowerCase().trim()).digest('hex');
+      const existing     = await profileStore.get(emailHash, { type: 'json' }) || {};
+      const now          = new Date().toISOString();
+      await profileStore.setJSON(emailHash, {
+        ...existing,
+        email:       email.toLowerCase().trim(),
+        name:        name || existing.name || '',
+        phone:       phone || existing.phone || '',
+        envelopeId,
+        ndaSigned:   false,
+        createdAt:   existing.createdAt || now,
+      });
+    } catch (profileErr) {
+      // Non-fatal
+      console.warn('Initial profile save failed:', profileErr.message);
+    }
 
     return {
       statusCode: 200,

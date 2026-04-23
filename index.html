@@ -567,7 +567,7 @@ section { padding:100px 0 80px; }
       </div>
     </div>
     <span class="gate-tag">Private Investor Access</span>
-    <h1 class="gate-headline">$2M Bridge Round</h1>
+    <h1 class="gate-headline">$5M Bridge Round</h1>
     <p class="gate-sub">Minimum investment $500,000. Accredited investors only.</p>
     <div class="gate-badge">
       <span>🔒</span>
@@ -721,6 +721,37 @@ section { padding:100px 0 80px; }
 </div>
 
 <!-- ══════════════════════════════════════════════════════ -->
+<!-- SCREEN 5: RETURNING INVESTOR                          -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="screen-returning" class="screen">
+  <div class="sent-icon">👋</div>
+  <h2 class="sent-headline" id="returning-headline">Welcome Back</h2>
+  <p class="sent-sub" id="returning-sub">We're sending a secure re-access link to your email. Check your inbox — it arrives in under a minute.</p>
+  <div class="sent-steps">
+    <div class="sent-step">
+      <div class="sent-step-num" style="background:#4caf50;">✓</div>
+      <div class="sent-step-text" id="returning-nda-line">Your NDA was executed previously.</div>
+    </div>
+    <div class="sent-step">
+      <div class="sent-step-num">2</div>
+      <div class="sent-step-text">Check your email for a secure one-click access link. No password, no form — just click to re-enter.</div>
+    </div>
+    <div class="sent-step">
+      <div class="sent-step-num">3</div>
+      <div class="sent-step-text">Click the link to open your investor dashboard where you left off.</div>
+    </div>
+  </div>
+  <div id="returning-pending-msg" style="display:none;background:rgba(201,168,76,0.08);border:1px solid var(--gold-border);border-radius:12px;padding:20px 24px;margin-top:24px;text-align:center;">
+    <div style="font-size:14px;color:var(--gold);font-weight:700;margin-bottom:8px;">NDA Pending Your Signature</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7;">We found your record but your DocuSign NDA hasn't been completed yet. Check your original DocuSign email to sign, then return here.</div>
+  </div>
+  <p style="margin-top:28px;font-size:13px;color:rgba(255,255,255,0.4);text-align:center;line-height:1.7;">
+    Questions? <a href="mailto:chad@healthcred.com" style="color:var(--gold);">chad@healthcred.com</a>
+    or <a href="tel:+19498663839" style="color:var(--gold);">+1 (949) 866-3839</a>
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
 <!-- MAIN NAV (shown after NDA)                            -->
 <!-- ══════════════════════════════════════════════════════ -->
 <nav id="topnav" style="display:flex">
@@ -742,7 +773,7 @@ section { padding:100px 0 80px; }
     </div>
   </div>
   <div class="nav-center">
-    <a class="nav-link" href="#opportunity">Opportunity</a>
+    <a class="nav-link" href="#what-we-do">How It Works</a>
     <a class="nav-link" href="#traction">Traction</a>
     <a class="nav-link" href="#capital">Capital Stack</a>
     <a class="nav-link" href="#proceeds">Use of Proceeds</a>
@@ -757,7 +788,7 @@ section { padding:100px 0 80px; }
   </div>
   <div class="nav-right">
     <span class="nav-conf">Confidential</span>
-    <span class="nav-badge">$2M Bridge Round</span>
+    <span class="nav-badge">$5M Bridge Round</span>
   </div>
 </nav>
 
@@ -765,6 +796,24 @@ section { padding:100px 0 80px; }
 <!-- PORTAL CONTENT                                        -->
 <!-- ══════════════════════════════════════════════════════ -->
 <div id="portal" class="visible">
+
+  <!-- ── INVESTOR PROFILE BAR (hidden until authenticated) ── -->
+  <div id="profile-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9000;background:rgba(13,27,42,0.97);border-top:1px solid var(--gold-border);backdrop-filter:blur(12px);">
+    <div style="max-width:1200px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#4caf50;box-shadow:0 0 6px rgba(76,175,80,0.6);flex-shrink:0;"></div>
+        <div>
+          <span id="profile-bar-name" style="font-size:13px;font-weight:700;color:var(--white);">Investor Portal</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.35);margin-left:10px;">NDA Executed</span>
+          <span id="profile-bar-date" style="font-size:12px;color:rgba(255,255,255,0.25);margin-left:6px;"></span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div id="profile-progress-pills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        <div id="profile-bar-visits" style="font-size:11px;color:rgba(255,255,255,0.25);white-space:nowrap;"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- HERO -->
   <section id="hero">
@@ -791,13 +840,13 @@ section { padding:100px 0 80px; }
 
       <div class="hero-kicker">
         <span class="hero-kicker-dot"></span>
-        <span class="hero-kicker-text">$2M Bridge Round — Now Open</span>
+        <span class="hero-kicker-text">$5M Bridge Round — Now Open</span>
       </div>
       <h1 class="hero-headline">The Model Works.<br><span class="gold">This Capital<br>Makes It Move.</span></h1>
-      <p class="hero-sub">HealthCred operates in 65+ active correctional facilities across three states with 9,200+ active lives and a $2.52M annualized commission run-rate — all on $1.3M raised to date. This $2M bridge funds Texas expansion, regional revenue leadership, and facility onboarding. Every dollar has an assigned outcome. Bridge investors come in first, at deal terms.</p>
+      <p class="hero-sub">HealthCred operates in 65+ active correctional facilities across three states with 9,200+ active lives and a $2.52M annualized commission run-rate — all on $1.3M raised to date. This $5M bridge funds Texas expansion, regional revenue leadership, and facility onboarding. Every dollar has an assigned outcome. Bridge investors come in first, at deal terms.</p>
       <div class="hero-stats">
         <div class="hero-stat">
-          <div class="hero-stat-val">$2M</div>
+          <div class="hero-stat-val">$5M</div>
           <div class="hero-stat-label">Bridge Round<br><span style="font-size:11px;font-weight:400;color:var(--gold);">Open now — limited window</span></div>
         </div>
         <div class="hero-stat">
@@ -815,7 +864,7 @@ section { padding:100px 0 80px; }
       </div>
       <div class="hero-btns">
         <a href="#terms" class="btn-primary">View Deal Terms →</a>
-        <a href="#opportunity" class="btn-secondary">Learn More</a>
+        <a href="#what-we-do" class="btn-secondary">How It Works</a>
       </div>
       <div class="hero-notice">
         <strong>✓ Revenue Already Generating</strong>
@@ -958,13 +1007,98 @@ section { padding:100px 0 80px; }
     </div>
   </section>
 
+  <!-- WHAT HEALTHCRED IS -->
+  <section id="what-we-do" style="background:var(--navy2);border-top:1px solid rgba(201,168,76,0.1);">
+    <div class="container">
+      <div class="section-label">What HealthCred Is</div>
+      <h2 class="section-title">Corrections Infrastructure.<br><span style="color:var(--gold);">Built Inside the Facility.</span></h2>
+      <div class="divider"></div>
+      <p class="section-sub" style="max-width:760px;margin-bottom:56px;">HealthCred is an embedded healthcare enrollment platform that operates inside correctional facilities — partnering directly with sheriffs and jail administrators to enroll inmates in ACA health coverage during their incarceration and activate that coverage the moment they're released. We are the only company doing this at scale.</p>
+
+      <!-- 3-STEP HOW IT WORKS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:56px;position:relative;">
+        <!-- connector lines -->
+        <div style="position:absolute;top:48px;left:calc(33.3% + 8px);right:calc(33.3% + 8px);height:2px;background:linear-gradient(90deg,var(--gold-border),var(--gold),var(--gold-border));opacity:0.5;display:none;"></div>
+
+        <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius);padding:32px 28px;position:relative;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--navy);margin-bottom:20px;">1</div>
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Facility Partnership</div>
+          <div style="font-size:20px;font-weight:800;color:var(--white);margin-bottom:12px;">We Embed Inside</div>
+          <div style="font-size:14px;color:var(--gray2);line-height:1.7;">HealthCred partners directly with sheriffs and jail administrators. We deploy our platform inside the facility — zero cost to the county. Every facility we've approached has signed a contract.</div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gold-border);font-size:12px;color:var(--gold);font-weight:700;">65+ Active Facilities · FL, GA, AL</div>
+        </div>
+
+        <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius);padding:32px 28px;position:relative;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--navy);margin-bottom:20px;">2</div>
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Enrollment</div>
+          <div style="font-size:20px;font-weight:800;color:var(--white);margin-bottom:12px;">We Enroll During Custody</div>
+          <div style="font-size:14px;color:var(--gray2);line-height:1.7;">Our licensed agents screen every inmate for ACA eligibility. Uninsured individuals are enrolled in coverage that activates at release. Already-insured individuals are transferred to our AOR — we take over their existing policy.</div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gold-border);font-size:12px;color:var(--gold);font-weight:700;">29,856 Total Applications · ~35% Activation Rate</div>
+        </div>
+
+        <div style="background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);border-radius:var(--radius);padding:32px 28px;position:relative;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--navy);margin-bottom:20px;">3</div>
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Commission Revenue</div>
+          <div style="font-size:20px;font-weight:800;color:var(--white);margin-bottom:12px;">Carrier Pays Us Directly</div>
+          <div style="font-size:14px;color:var(--gray2);line-height:1.7;">Insurance carriers pay HealthCred a monthly commission for every active enrolled life — directly, in ~30 days, without invoices, claims, or approvals. As long as the person is enrolled, the commission flows.</div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gold-border);font-size:12px;color:var(--gold);font-weight:700;">$1.83M Verified · $2.52M Annualized Run-Rate</div>
+        </div>
+      </div>
+
+      <!-- TWO REVENUE PATHS -->
+      <div style="margin-bottom:56px;">
+        <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:24px;text-align:center;">Two Revenue Paths — Both Generate Commission</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:var(--radius);padding:28px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+              <div style="width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,0.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🆕</div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:var(--white);">Path A — New Enrollment</div>
+                <div style="font-size:11px;color:var(--gray);margin-top:2px;">~60% of opportunity</div>
+              </div>
+            </div>
+            <p style="font-size:14px;color:var(--gray2);line-height:1.7;margin-bottom:16px;">Inmate arrives uninsured. HealthCred screens for eligibility, submits ACA application during custody. Coverage activates upon release. Carrier begins paying commission monthly from day one of activation.</p>
+            <div style="background:rgba(201,168,76,0.06);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--gold);font-weight:600;">
+              No insurance → ACA coverage → monthly carrier commission
+            </div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--gold-border);border-radius:var(--radius);padding:28px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+              <div style="width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,0.15);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🔄</div>
+              <div>
+                <div style="font-size:13px;font-weight:800;color:var(--white);">Path B — AOR Conversion</div>
+                <div style="font-size:11px;color:var(--gray);margin-top:2px;">~40% of opportunity</div>
+              </div>
+            </div>
+            <p style="font-size:14px;color:var(--gray2);line-height:1.7;margin-bottom:16px;">Inmate arrives already insured. HealthCred becomes their Agent of Record — taking over an existing policy. Commission on their plan flows to HealthCred immediately. No new enrollment required.</p>
+            <div style="background:rgba(201,168,76,0.06);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--gold);font-weight:600;">
+              Already insured → AOR transfer → existing commission captured
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOT A REIMBURSEMENT MODEL -->
+      <div style="background:rgba(201,168,76,0.05);border:1px solid var(--gold-border);border-radius:var(--radius);padding:32px;max-width:900px;margin:0 auto;">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;">
+          <div style="font-size:48px;">🚫</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:8px;">This Is NOT a Reimbursement Model</div>
+            <p style="font-size:14px;color:var(--gray2);line-height:1.7;">HealthCred does not bill Medicaid, file claims, submit invoices, or seek government reimbursement. There is no coding, no denials, no accounts receivable aging. Carrier commission is paid directly to HealthCred within approximately 30 days of each enrollment period — the same way any licensed insurance agent is paid. No claims risk. No balance sheet exposure. No collection process.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- OPPORTUNITY -->
   <section id="opportunity" style="background:var(--navy);">
     <div class="container">
       <div class="section-label">The Opportunity</div>
       <h2 class="section-title">Proven Model.<br><span style="color:var(--gold);">Capital Accelerates It.</span></h2>
       <div class="divider"></div>
-      <p class="section-sub" style="margin-bottom:48px;">$500K minimum. Bridge investors come in first at deal terms. The $2M funds Texas expansion, revenue team scale, and facility onboarding — capital with an assigned operational outcome. Subject to accredited investor verification.</p>
+      <p class="section-sub" style="margin-bottom:48px;">$500K minimum. Bridge investors come in first at deal terms. The $5M funds Texas expansion, revenue team scale, and facility onboarding — capital with an assigned operational outcome. Subject to accredited investor verification.</p>
       <div class="card-grid">
         <div class="card">
           <div class="card-icon">🏛️</div>
@@ -974,12 +1108,12 @@ section { padding:100px 0 80px; }
         <div class="card">
           <div class="card-icon">⚡</div>
           <div class="card-title">Bridge Capital Deploys Immediately</div>
-          <div class="card-text">Your $2M goes to work the moment it closes — revenue team expansion, facility onboarding, and technology infrastructure. The model is already generating $2.52M in annualized run-rate. This capital accelerates what's already working while the PE close completes.</div>
+          <div class="card-text">Your capital goes to work the moment it closes — revenue team expansion, facility onboarding, and technology infrastructure. The model is already generating $2.52M in annualized run-rate. This capital accelerates what's already working while the PE close completes.</div>
         </div>
         <div class="card">
           <div class="card-icon">📍</div>
           <div class="card-title">Limited Allocation</div>
-          <div class="card-text">The $2M bridge is not a broad offering. Minimum commitment is $500K. This is a small, accredited-investor allocation that fills before the institutional round closes.</div>
+          <div class="card-text">The $5M bridge is not a broad offering. Minimum commitment is $500K. This is a small, accredited-investor allocation that fills before the institutional round closes.</div>
         </div>
         <div class="card">
           <div class="card-icon">💰</div>
@@ -1688,7 +1822,7 @@ section { padding:100px 0 80px; }
   <section id="capital" style="background:var(--navy2);">
     <div class="container">
       <div class="section-label">Capital Structure</div>
-      <h2 class="section-title">$2M — Every Dollar<br><span style="color:var(--gold);">Has an Assigned Outcome.</span></h2>
+      <h2 class="section-title">$5M — Every Dollar<br><span style="color:var(--gold);">Has an Assigned Outcome.</span></h2>
       <div class="divider"></div>
       <p class="section-sub" style="margin-bottom:48px;">Bridge capital deploys immediately upon close. Every dollar has an assigned operational outcome — no fluff, no runway burn. Texas expansion, revenue team growth, facility onboarding, and technology infrastructure.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;flex-wrap:wrap;">
@@ -1698,10 +1832,10 @@ section { padding:100px 0 80px; }
               <div class="stack-row">
                 <div class="stack-left">
                   <div class="stack-type">Closes First <span class="stack-badge">You Are Here</span></div>
-                  <div class="stack-name">Bridge Round — $2M</div>
+                  <div class="stack-name">Bridge Round — $5M</div>
                   <div class="stack-detail">Private accredited investors · deploys immediately</div>
                 </div>
-                <div class="stack-amount">$2M</div>
+                <div class="stack-amount">$5M</div>
               </div>
             </div>
             <div class="stack-item stack-pe">
@@ -2482,8 +2616,8 @@ section { padding:100px 0 80px; }
         <div class="tl-item">
           <div class="tl-dot active"></div>
           <div class="tl-phase">Now — Q2 2026</div>
-          <div class="tl-title">Bridge Round Closes ($2M)</div>
-          <div class="tl-text">Revenue team expansion, technology acceleration, facility onboarding. ARR grows from $2.52M toward $5M+. Active lives scale from 9,217 toward 20K+.</div>
+          <div class="tl-title">Bridge Round Closes ($5M)</div>
+          <div class="tl-text">Revenue team expansion, technology acceleration, facility onboarding. ARR grows from $2.52M toward $8M+. Active lives scale from 9,217 toward 25K+.</div>
         </div>
         <div class="tl-item">
           <div class="tl-dot"></div>
@@ -2580,8 +2714,8 @@ section { padding:100px 0 80px; }
         <!-- Phase 1 -->
         <div style="background:var(--navy);padding:32px 24px;">
           <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">Phase 1 &#8212; Q1/Q2 2026</div>
-          <div style="font-size:18px;font-weight:800;color:var(--white);margin-bottom:16px;">Bridge Deploys ($2M)</div>
-          <div style="font-size:13px;color:var(--gray2);line-height:1.7;margin-bottom:20px;">$2M moves in 30 days. Revenue team expands. Texas market entry initiated. FL/GA/AL facility onboarding accelerates. Active lives grow from 9,217 toward 20,000+. First quarterly distributions begin.</div>
+          <div style="font-size:18px;font-weight:800;color:var(--white);margin-bottom:16px;">Bridge Deploys ($5M)</div>
+          <div style="font-size:13px;color:var(--gray2);line-height:1.7;margin-bottom:20px;">$5M moves in 30 days. Revenue team expands. Texas market entry initiated. FL/GA/AL facility onboarding accelerates. Active lives grow from 9,217 toward 25,000+. First quarterly distributions begin.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div style="background:rgba(201,168,76,0.08);border-radius:8px;padding:14px;text-align:center;">
               <div style="font-size:22px;font-weight:900;color:var(--gold);">20K+</div>
@@ -3216,7 +3350,7 @@ section { padding:100px 0 80px; }
   <section id="terms">
     <div class="container">
       <div class="section-label">Deal Terms</div>
-      <h2 class="section-title">$2M Bridge Round — Investor Structure</h2>
+      <h2 class="section-title">$5M Bridge Round — Investor Structure</h2>
       <div class="divider"></div>
       <p style="font-size:15px;color:var(--gray2);line-height:1.8;max-width:760px;margin-bottom:12px;">$500K minimum. Bridge investors come in first — and because of that, they earn the most. The participation rate floats: whoever is in the round earns a pro-rata share of the full 18% pool based on their position in the capital stack. As additional capital fills toward the $25M total close, the aggregate rate pools proportionally — but bridge investors' economics are locked from day one. No equity is transferred. Chad R. LaBoy retains 100% ownership and governance.</p>
       <div style="background:rgba(201,168,76,0.07);border:1px solid var(--gold-border);border-radius:var(--radius);padding:16px 20px;margin-bottom:36px;max-width:760px;">
@@ -3278,7 +3412,7 @@ section { padding:100px 0 80px; }
                 <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;border-bottom:1px solid var(--gold-border);">Pool Rate (AGC)</th>
                 <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;border-bottom:1px solid var(--gold-border);">$500K Investor Share</th>
                 <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;border-bottom:1px solid var(--gold-border);">$1M Investor Share</th>
-                <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;border-bottom:1px solid var(--gold-border);">$2M Investor Share</th>
+                <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;border-bottom:1px solid var(--gold-border);">$5M Investor Share</th>
                 <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);font-weight:600;border-bottom:1px solid var(--gold-border);">Stage</th>
               </tr>
             </thead>
@@ -3300,7 +3434,7 @@ section { padding:100px 0 80px; }
                 <td style="padding:10px 14px;font-size:12px;color:var(--gold);font-weight:600;">Bridge Filling</td>
               </tr>
               <tr style="background:rgba(201,168,76,0.04);">
-                <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--white);">$2M (bridge full)</td>
+                <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--white);">$5M (bridge full)</td>
                 <td style="padding:10px 14px;font-size:14px;font-weight:700;color:var(--gold);">18.0%</td>
                 <td style="padding:10px 14px;font-size:13px;color:var(--white);">4.5% <span style="font-size:11px;color:var(--gray3);">(pro-rata)</span></td>
                 <td style="padding:10px 14px;font-size:13px;color:var(--white);">9.0% <span style="font-size:11px;color:var(--gray3);">(pro-rata)</span></td>
@@ -3342,7 +3476,7 @@ section { padding:100px 0 80px; }
           <table class="terms-table">
             <tr>
               <td>Bridge Round</td>
-              <td><strong style="color:var(--gold);">$2,000,000</strong> — closes first, deploys immediately</td>
+              <td><strong style="color:var(--gold);">$5,000,000</strong> — closes first, deploys immediately</td>
             </tr>
             <tr>
               <td>Institutional Follow</td>
@@ -3527,7 +3661,7 @@ section { padding:100px 0 80px; }
           <!-- Stage 2: Bridge Round — ACTIVE NOW -->
           <div style="background:rgba(201,168,76,0.1);border:2px solid rgba(201,168,76,0.75);border-radius:12px;padding:22px 18px;text-align:center;position:relative;box-shadow:0 0 28px rgba(201,168,76,0.18);">
             <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;animation:pulseGold 2.5s ease-in-out infinite;">⬤ Open Now</div>
-            <div style="font-size:28px;font-weight:900;color:var(--gold);margin-bottom:5px;">$2M</div>
+            <div style="font-size:28px;font-weight:900;color:var(--gold);margin-bottom:5px;">$5M</div>
             <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.95);margin-bottom:6px;">Bridge Round</div>
             <div style="font-size:11px;color:rgba(255,255,255,0.5);line-height:1.6;">$500K minimum. Funds the operational window while the institutional round closes.</div>
           </div>
@@ -3546,7 +3680,7 @@ section { padding:100px 0 80px; }
         </div>
 
         <!-- Total raise summary line -->
-        <div style="text-align:center;margin-top:20px;font-size:12px;color:rgba(255,255,255,0.28);">Total capital at close: <span style="color:rgba(255,255,255,0.55);font-weight:600;">$1.3M (F&amp;F) + $2M (Bridge) + $23M (Growth) = $26.3M</span></div>
+        <div style="text-align:center;margin-top:20px;font-size:12px;color:rgba(255,255,255,0.28);">Total capital at close: <span style="color:rgba(255,255,255,0.55);font-weight:600;">$1.3M (F&amp;F) + $5M (Bridge) + $23M (Growth) = $29.3M</span></div>
       </div>
 
       <!-- SLOT STATUS + SELECTOR -->
@@ -3557,7 +3691,7 @@ section { padding:100px 0 80px; }
           <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">Select Your Investment Level</div>
 
           <!-- BRIDGE ROUND TIERS -->
-          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;">Bridge Round — $2M</div>
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;">Bridge Round — $5M</div>
           <div id="invest-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
             <button onclick="selectInvestment(this,'$500,000')" class="invest-option-btn" style="padding:18px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);border-radius:10px;color:var(--white);cursor:pointer;text-align:left;transition:all .2s;">
               <div style="font-size:20px;font-weight:800;color:var(--gold);">$500K</div>
@@ -3567,12 +3701,12 @@ section { padding:100px 0 80px; }
               <div style="font-size:20px;font-weight:800;color:var(--gold);">$1M</div>
               <div style="font-size:11px;color:var(--gray2);margin-top:4px;">2× minimum commitment</div>
             </button>
-            <button onclick="selectInvestment(this,'$1,500,000')" class="invest-option-btn" style="padding:18px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);border-radius:10px;color:var(--white);cursor:pointer;text-align:left;transition:all .2s;">
-              <div style="font-size:20px;font-weight:800;color:var(--gold);">$1.5M</div>
-              <div style="font-size:11px;color:var(--gray2);margin-top:4px;">3× minimum commitment</div>
+            <button onclick="selectInvestment(this,'$2,500,000')" class="invest-option-btn" style="padding:18px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);border-radius:10px;color:var(--white);cursor:pointer;text-align:left;transition:all .2s;">
+              <div style="font-size:20px;font-weight:800;color:var(--gold);">$2.5M</div>
+              <div style="font-size:11px;color:var(--gray2);margin-top:4px;">Half of bridge round</div>
             </button>
-            <button onclick="selectInvestment(this,'$2,000,000')" class="invest-option-btn" style="padding:18px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);border-radius:10px;color:var(--white);cursor:pointer;text-align:left;transition:all .2s;">
-              <div style="font-size:20px;font-weight:800;color:var(--gold);">$2M</div>
+            <button onclick="selectInvestment(this,'$5,000,000')" class="invest-option-btn" style="padding:18px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--gold-border);border-radius:10px;color:var(--white);cursor:pointer;text-align:left;transition:all .2s;">
+              <div style="font-size:20px;font-weight:800;color:var(--gold);">$5M</div>
               <div style="font-size:11px;color:var(--gray2);margin-top:4px;">Full bridge — sole investor</div>
             </button>
           </div>
@@ -3642,11 +3776,11 @@ section { padding:100px 0 80px; }
               </div>
               <div style="display:flex;align-items:center;gap:12px;">
                 <div style="width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px rgba(201,168,76,0.5);flex-shrink:0;"></div>
-                <div style="font-size:13px;color:var(--white);flex:1;">$2M position (sole investor)</div>
+                <div style="font-size:13px;color:var(--white);flex:1;">$5M position (sole investor)</div>
                 <div style="font-size:11px;color:var(--gold);font-weight:700;">Available</div>
               </div>
             </div>
-            <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:var(--gray);line-height:1.5;">$500K minimum. Round closes when $2M is committed. Investors seeking $5M–$25M exposure can express interest in the institutional PE round directly — Chad will discuss structure and terms in a one-on-one conversation.</div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:var(--gray);line-height:1.5;">$500K minimum. Round closes when $5M is committed. Investors seeking $10M–$25M exposure can express interest in the institutional PE round directly — Chad will discuss structure and terms in a one-on-one conversation.</div>
           </div>
 
           <!-- What Happens Next -->
@@ -3714,7 +3848,7 @@ section { padding:100px 0 80px; }
         A Profits Interest in a limited liability company is an illiquid investment. There is no public market for the Company's Profits Interests, and none is expected to develop. Investors may not be able to liquidate their investment and should be prepared to hold their Profits Interest for an indefinite period. An investment in the Company involves a high degree of risk, including the potential loss of the entire amount invested.<br><br>
         <strong>Important — No Insurance License Required:</strong> Investors in this offering do not sell insurance, act as insurance agents or brokers, or earn commissions. No insurance license is required to participate. HealthCred Care, LLC operates through its own licensed agents (Agency License #L126346; NPN #21206431) who generate enrollment revenue. Investors receive a contractual share of the Company's net income only — they have no role in, and bear no regulatory responsibility for, any insurance activity conducted by the Company.<br><br>
         <strong>Carrier Commissions — Variability and AOR Risk:</strong> Insurance carrier commission rates are set independently by each carrier, vary by state, plan type, and enrollee age band, and are subject to change at each carrier's annual discretion. HealthCred does not set, guarantee, or control carrier commission rates. All per-member-per-month (PMPM) figures presented in this portal are illustrative averages based on historical verified payment data and do not represent guaranteed future revenue. Additionally, enrolled individuals retain the legal right to transfer their Agent of Record (AOR) designation to a different agent at any time, which would terminate HealthCred's commission on that individual. While CMS implemented enhanced AOR safeguards effective July 2024 — requiring a documented three-way consent process for any AOR change — HealthCred cannot prevent a consumer from lawfully exercising this right. Investor distributions are based on actual Adjusted Gross Commission received each quarter and will fluctuate with carrier payment activity, AOR changes, enrollment persistence, and market conditions. No minimum distribution amount is guaranteed.<br><br>
-        <strong>Growth Capital — No Guarantee of Future Raise:</strong> This portal references a $25M total capital target inclusive of this $2M bridge round. References to future growth capital tranches do not constitute a binding commitment, signed term sheet, or guarantee that additional capital will be raised at any stated amount, timeline, or from any specific source. Bridge investors should evaluate this investment solely on the standalone merits of HealthCred Care, LLC. All timelines are estimates only and are subject to final documentation, due diligence, and closing conditions outside the Company's sole control.<br><br>
+        <strong>Growth Capital — No Guarantee of Future Raise:</strong> This portal references a $25M+ total capital target inclusive of this $5M bridge round. References to future growth capital tranches do not constitute a binding commitment, signed term sheet, or guarantee that additional capital will be raised at any stated amount, timeline, or from any specific source. Bridge investors should evaluate this investment solely on the standalone merits of HealthCred Care, LLC. All timelines are estimates only and are subject to final documentation, due diligence, and closing conditions outside the Company's sole control.<br><br>
         The information contained herein includes forward-looking statements that involve known and unknown risks, uncertainties, and other factors that may cause actual results, performance, or achievements to differ materially from those expressed or implied. Financial projections, return scenarios, exit valuations, and operational targets presented herein are illustrative only and are not guarantees of future performance. Past performance is not indicative of future results. This communication does not constitute investment, legal, or tax advice. Prospective investors should conduct their own independent due diligence and consult with their own legal, tax, and financial advisors before making any investment decision.<br><br>
         <strong>HealthCred Care LLC | Fort Lauderdale, Florida | chad@healthcred.com | (877) 390-4049</strong><br>
         <a href="https://www.healthcred.com" target="_blank" style="color:rgba(201,168,76,0.6);text-decoration:none;">www.healthcred.com</a><br><br>
@@ -3746,10 +3880,11 @@ function showScreen(id) {
 }
 
 // ── STEP 1: EMAIL GATE ──────────────────────────────────
-function proceedToNDA() {
-  const email = document.getElementById('gate-email').value.trim();
+async function proceedToNDA() {
+  const email      = document.getElementById('gate-email').value.trim();
   const accredited = document.getElementById('accredited-check').checked;
-  const errEl = document.getElementById('gate-error');
+  const errEl      = document.getElementById('gate-error');
+  const btn        = document.getElementById('gate-btn');
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errEl.textContent = 'Please enter a valid email address.';
@@ -3761,9 +3896,80 @@ function proceedToNDA() {
   }
   errEl.textContent = '';
   investorEmail = email;
-  document.getElementById('nda-email').value = email;
-  showScreen('screen-nda');
-  window.scrollTo(0, 0);
+
+  // Check if this is a returning investor
+  btn.disabled    = true;
+  btn.textContent = 'Checking…';
+
+  try {
+    const res     = await fetch(`/investor-profile?email=${encodeURIComponent(email)}`);
+    const profile = res.ok ? await res.json() : { exists: false };
+
+    if (profile.exists && profile.ndaSigned) {
+      // Returning investor — send magic link
+      const firstName = (profile.name || '').split(' ')[0] || '';
+      document.getElementById('returning-headline').textContent =
+        firstName ? `Welcome back, ${firstName}` : 'Welcome back';
+      document.getElementById('returning-nda-line').textContent =
+        profile.ndaSignedAt
+          ? `Your NDA was executed on ${formatDate(profile.ndaSignedAt)}.`
+          : 'Your NDA was previously executed.';
+      document.getElementById('returning-pending-msg').style.display = 'none';
+      document.getElementById('returning-sub').textContent =
+        `We're sending a secure re-access link to ${email}. Check your inbox — it arrives in under a minute.`;
+
+      showScreen('screen-returning');
+      window.scrollTo(0, 0);
+
+      // Fire magic link in background
+      fetch('/magic-link', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email }),
+      }).catch(e => console.warn('magic-link request failed:', e.message));
+
+    } else if (profile.exists && profile.ndaPending) {
+      // Profile exists but NDA not signed yet
+      document.getElementById('returning-headline').textContent = 'Your NDA is Pending';
+      document.getElementById('returning-sub').textContent = 'We found your record. Your DocuSign NDA email is still waiting for your signature.';
+      document.getElementById('returning-pending-msg').style.display = 'block';
+      document.getElementById('returning-nda-line').style.display = 'none';
+      showScreen('screen-returning');
+      window.scrollTo(0, 0);
+
+      // Resume polling if we have their envelope ID
+      if (profile.envelopeId) {
+        currentEnvelopeId = profile.envelopeId;
+        document.getElementById('sent-email-display').textContent = email;
+        setTimeout(() => {
+          showScreen('screen-sent');
+          startPolling();
+        }, 3000);
+      }
+
+    } else {
+      // New investor — normal NDA flow
+      document.getElementById('nda-email').value = email;
+      showScreen('screen-nda');
+      window.scrollTo(0, 0);
+    }
+  } catch (err) {
+    // Network error or profile service down — fall through to NDA form
+    console.warn('Profile check failed, proceeding to NDA:', err.message);
+    document.getElementById('nda-email').value = email;
+    showScreen('screen-nda');
+    window.scrollTo(0, 0);
+  }
+
+  btn.disabled    = false;
+  btn.textContent = 'Request Access →';
+}
+
+function formatDate(isoString) {
+  if (!isoString) return '';
+  try {
+    return new Date(isoString).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  } catch { return ''; }
 }
 
 function goBack() {
@@ -3920,7 +4126,138 @@ function showPortal() {
     initRevenueChart();
     initDonutChart();
   }, 100);
+
+  // Load profile if token present in URL, then start tracking
+  const urlParams  = new URLSearchParams(window.location.search);
+  const urlToken   = urlParams.get('access');
+  const urlEid     = urlParams.get('eid');
+  if (urlToken && urlEid) {
+    loadInvestorProfile(urlToken, urlEid);
+  }
 }
+
+// ── INVESTOR PROFILE + PROGRESS TRACKING ─────────────────
+let sessionProfile    = null;
+let sessionToken      = null;
+let sessionEid        = null;
+let sectionsSeen      = new Set();
+let progressFlushTimer = null;
+
+async function loadInvestorProfile(token, eid) {
+  sessionToken = token;
+  sessionEid   = eid;
+  try {
+    const res  = await fetch(`/investor-profile?token=${encodeURIComponent(token)}&eid=${encodeURIComponent(eid)}`);
+    const data = res.ok ? await res.json() : null;
+    if (data && data.valid && data.profile) {
+      sessionProfile = data.profile;
+      renderProfileBar(data.profile);
+      // Restore previously viewed sections to Set
+      (data.profile.sectionsViewed || []).forEach(s => sectionsSeen.add(s));
+      initSectionTracking();
+    }
+  } catch (err) {
+    console.warn('Profile load failed:', err.message);
+    initSectionTracking();
+  }
+}
+
+function renderProfileBar(profile) {
+  const bar = document.getElementById('profile-bar');
+  if (!bar) return;
+
+  const nameEl   = document.getElementById('profile-bar-name');
+  const dateEl   = document.getElementById('profile-bar-date');
+  const visitsEl = document.getElementById('profile-bar-visits');
+
+  if (nameEl)   nameEl.textContent   = profile.name || 'Investor';
+  if (dateEl)   dateEl.textContent   = profile.ndaSignedAt ? `· Signed ${formatDate(profile.ndaSignedAt)}` : '';
+  if (visitsEl) visitsEl.textContent = profile.accessCount > 1 ? `Visit #${profile.accessCount}` : 'First visit';
+
+  bar.style.display = 'block';
+  updateProgressPills(profile.sectionsViewed || []);
+}
+
+const SECTION_LABELS = {
+  'hero':          'Overview',
+  'what-we-do':    'How It Works',
+  'traction':      'Traction',
+  'unit-economics':'Unit Economics',
+  'model':         'Revenue Model',
+  'team':          'Team',
+  'capital':       'Capital Stack',
+  'invest':        'Invest',
+};
+
+function updateProgressPills(sections) {
+  const container = document.getElementById('profile-progress-pills');
+  if (!container) return;
+  container.innerHTML = '';
+  const all = Object.keys(SECTION_LABELS);
+  all.forEach(sectionId => {
+    const seen = sections.includes(sectionId);
+    const pill = document.createElement('div');
+    pill.style.cssText = `
+      font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;
+      border-radius:20px;text-transform:uppercase;
+      background:${seen ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.04)'};
+      border:1px solid ${seen ? 'rgba(201,168,76,0.4)' : 'rgba(255,255,255,0.08)'};
+      color:${seen ? 'var(--gold)' : 'rgba(255,255,255,0.2)'};
+    `;
+    pill.textContent = SECTION_LABELS[sectionId];
+    container.appendChild(pill);
+  });
+}
+
+function initSectionTracking() {
+  if (!('IntersectionObserver' in window)) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const sectionId = entry.target.id;
+        if (sectionId && !sectionsSeen.has(sectionId)) {
+          sectionsSeen.add(sectionId);
+          // Update pills if profile bar is showing
+          if (sessionProfile) {
+            updateProgressPills(Array.from(sectionsSeen));
+          }
+          scheduleProgressFlush();
+        }
+      }
+    });
+  }, { threshold: 0.25 });
+
+  Object.keys(SECTION_LABELS).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+}
+
+function scheduleProgressFlush() {
+  if (progressFlushTimer) clearTimeout(progressFlushTimer);
+  progressFlushTimer = setTimeout(flushProgress, 5000); // batch up sections, send after 5s idle
+}
+
+function flushProgress() {
+  if (!sessionToken || !sessionEid) return;
+  const sections = Array.from(sectionsSeen);
+  fetch('/track-progress', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ token: sessionToken, envelopeId: sessionEid, sectionsViewed: sections }),
+  }).catch(e => console.warn('track-progress failed:', e.message));
+}
+
+// Also flush on page unload (best-effort)
+window.addEventListener('beforeunload', () => {
+  if (sessionToken && sessionEid && sectionsSeen.size > 0) {
+    navigator.sendBeacon('/track-progress', JSON.stringify({
+      token: sessionToken, envelopeId: sessionEid,
+      sectionsViewed: Array.from(sectionsSeen)
+    }));
+  }
+});
 
 // ── SCROLL ANIMATIONS ────────────────────────────────────
 function initScrollAnimations() {
@@ -4268,6 +4605,15 @@ function selectInvestment(btn, amount) {
   btn.style.borderColor = '#C9A84C';
   btn.style.transform   = 'translateY(-2px)';
   btn.style.boxShadow   = '0 4px 20px rgba(201,168,76,0.2)';
+
+  // Track interest level on profile
+  if (sessionToken && sessionEid) {
+    fetch('/track-progress', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token: sessionToken, envelopeId: sessionEid, interestLevel: amount }),
+    }).catch(() => {});
+  }
 }
 
 async function submitInterest() {
@@ -4296,6 +4642,14 @@ async function submitInterest() {
     if (res.ok) {
       confirmEl.style.display = 'block';
       confirmEl.textContent = '✓ Message sent. Chad will follow up with you shortly.';
+      // Track interest submission on profile
+      if (sessionToken && sessionEid) {
+        fetch('/track-progress', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ token: sessionToken, envelopeId: sessionEid, interestSubmitted: true, interestLevel: selectedInvestAmount }),
+        }).catch(() => {});
+      }
     } else {
       throw new Error('Server error');
     }
@@ -4370,9 +4724,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Investor arriving via their access email link (?access=TOKEN&eid=ENVELOPE_ID)
-  if (urlParams.get('access') && urlParams.get('eid')) {
+  // or via magic link re-access
+  const accessToken = urlParams.get('access');
+  const eid         = urlParams.get('eid');
+  if (accessToken && eid) {
+    // Store token before clearing URL, so showPortal can load profile
+    sessionToken = accessToken;
+    sessionEid   = eid;
     showPortal();
     history.replaceState({}, '', window.location.pathname);
+    // Load profile — token/eid already set
+    loadInvestorProfile(accessToken, eid);
     return;
   }
 

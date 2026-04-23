@@ -24,6 +24,7 @@
 
 const crypto = require('crypto');
 const tls    = require('tls');
+const { getStore } = require('@netlify/blobs');
 
 // ── Access token ─────────────────────────────────────────────────────────────
 
@@ -123,7 +124,7 @@ async function sendAccessEmail({ investorName, investorEmail, accessUrl, cfg }) 
     '',
     'This link is unique to you. Please do not share it.',
     '',
-    "Inside you'll find our full financial model, traction metrics, unit economics, and deal terms.",
+    'Inside you\'ll find our full financial model, traction metrics, unit economics, and deal terms.',
     'If you have any questions, reply to this email or call me directly.',
     '',
     'Chad R. LaBoy | President & Founder | HealthCred | Corrections Infrastructure',
@@ -220,6 +221,29 @@ exports.handler = async (event) => {
 
     const token     = generateAccessToken(envelopeId, investor.email);
     const accessUrl = `${cfg.PORTAL_URL}/?access=${token}&eid=${envelopeId}`;
+
+    // ── Save/update investor profile in Netlify Blobs ───────────────────────
+    try {
+      const profileStore = getStore({ name: 'investor-profiles', consistency: 'strong' });
+      const emailHash    = crypto.createHash('sha256')
+        .update(investor.email.toLowerCase().trim()).digest('hex');
+      const existing     = await profileStore.get(emailHash, { type: 'json' }) || {};
+      const now          = new Date().toISOString();
+      await profileStore.setJSON(emailHash, {
+        ...existing,
+        email:       investor.email.toLowerCase().trim(),
+        name:        investor.name || existing.name || '',
+        envelopeId,
+        ndaSigned:   true,
+        ndaSignedAt: now,
+        accessToken: token,
+        createdAt:   existing.createdAt || now,
+      });
+      console.log(`Investor profile saved for ${investor.email}`);
+    } catch (profileErr) {
+      // Non-fatal — don't block access email delivery
+      console.warn('Profile save failed:', profileErr.message);
+    }
 
     console.log(`Sending access email to: ${investor.email}`);
 

@@ -19,6 +19,7 @@
 const https  = require('https');
 const crypto = require('crypto');
 
+// Read env vars fresh on every invocation — avoids Lambda cold-start caching
 function getConfig() {
   return {
     ACCOUNT_ID:      process.env.DOCUSIGN_ACCOUNT_ID,
@@ -36,6 +37,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function b64url(buf) {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
@@ -79,6 +81,7 @@ function httpsPost(hostname, path, headers, body) {
   });
 }
 
+// ── DocuSign JWT Auth ─────────────────────────────────────────────────────────
 function makeJWT(cfg) {
   const privateKey = Buffer.from(cfg.PRIVATE_KEY_B64, 'base64').toString('utf8');
   const header  = b64url(Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
@@ -107,6 +110,7 @@ async function getAccessToken(cfg) {
   return res.body.access_token;
 }
 
+// ── Netlify handler ───────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: CORS, body: '' };
@@ -123,6 +127,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: 'envelopeId query parameter is required' }) };
   }
 
+  // Basic sanity check — envelopeId should be a UUID-ish string
   if (!/^[a-f0-9-]{36}$/i.test(envelopeId)) {
     return { statusCode: 400, headers: CORS,
       body: JSON.stringify({ error: 'Invalid envelopeId format' }) };
@@ -131,6 +136,7 @@ exports.handler = async (event) => {
   const cfg = getConfig();
 
   if (!cfg.INTEGRATION_KEY || !cfg.PRIVATE_KEY_B64) {
+    // DocuSign not configured — return demo response
     return {
       statusCode: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },

@@ -3,18 +3,19 @@
  * Netlify Function: send-lead.js
  *
  * Triggered when an investor submits the interest form on bridge.healthcred.com.
- * Sends an email notification to Chad via Gmail SMTP and optionally sends a
- * DocuSign contribution agreement when the CA template is configured.
+ * Sends an email notification to Chad via Gmail SMTP (built-in tls module — zero dependencies)
+ * and optionally sends a DocuSign contribution agreement when the CA template is configured.
  *
- * Environment variables:
+ * Environment variables (already set in Netlify dashboard):
  *   GMAIL_USER          = chad@healthcred.com
  *   GMAIL_APP_PASSWORD  = (16-char Google App Password)
  *   NOTIFICATION_EMAIL  = chad@healthcred.com
+ *
  *   DOCUSIGN_ACCOUNT_ID        = 1dab0a51-af7c-463b-a3d2-955fa2b8d354
  *   DOCUSIGN_INTEGRATION_KEY   = 244c70f1-da74-4943-a9e0-8507101c8128
  *   DOCUSIGN_USER_ID           = a22f1670-1914-4a1c-b901-915b82c17dfc
  *   DOCUSIGN_PRIVATE_KEY       = (RSA private key, base64 encoded)
- *   DOCUSIGN_CA_TEMPLATE_ID    = (add when CA template is ready)
+ *   DOCUSIGN_CA_TEMPLATE_ID    = (add when contribution agreement template is ready)
  *   DOCUSIGN_BASE_URL          = https://na4.docusign.net/restapi
  *   DOCUSIGN_OAUTH_URL         = https://account.docusign.com
  */
@@ -25,6 +26,7 @@ const tls    = require('tls');
 const https  = require('https');
 const crypto = require('crypto');
 
+// ── Config ────────────────────────────────────────────────────────────────────
 function getConfig() {
   return {
     GMAIL_USER:     process.env.GMAIL_USER,
@@ -40,24 +42,29 @@ function getConfig() {
   };
 }
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Headers': 'Content-Type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// ── Raw Gmail SMTP via built-in tls (no nodemailer, no external deps) ─────────
 function sendGmailSMTP({ user, pass, to, replyTo, subject, text, html }) {
   return new Promise((resolve, reject) => {
     const socket = tls.connect(
       { host: 'smtp.gmail.com', port: 465, servername: 'smtp.gmail.com' },
-      () => {}
+      () => { /* TLS handshake complete — wait for server greeting */ }
     );
+
     socket.setTimeout(20000);
     socket.on('timeout', () => { socket.destroy(); reject(new Error('SMTP timeout')); });
     socket.on('error', reject);
 
     let buf  = '';
     let step = 0;
+
+    // Build MIME message with plain-text + HTML parts
     const boundary = `hc_${Date.now()}`;
     const headers  = [
       `From: HealthCred Portal <${user}>`,
@@ -65,7 +72,9 @@ function sendGmailSMTP({ user, pass, to, replyTo, subject, text, html }) {
       replyTo ? `Reply-To: ${replyTo}` : null,
       `Subject: ${subject}`,
       'MIME-Version: 1.0',
-      html ? `Content-Type: multipart/alternative; boundary="${boundary}"` : 'Content-Type: text/plain; charset=UTF-8',
+      html
+        ? `Content-Type: multipart/alternative; boundary="${boundary}"`
+        : 'Content-Type: text/plain; charset=UTF-8',
     ].filter(Boolean).join('\r\n');
 
     let body = headers + '\r\n\r\n';
@@ -76,7 +85,9 @@ function sendGmailSMTP({ user, pass, to, replyTo, subject, text, html }) {
     } else {
       body += text + '\r\n';
     }
+    // Escape lines starting with '.' (SMTP transparency)
     const escapedBody = body.split('\r\n').map(l => l === '.' ? '..' : l).join('\r\n');
+
     const w = (cmd) => socket.write(cmd + '\r\n');
 
     socket.on('data', chunk => {
@@ -86,9 +97,12 @@ function sendGmailSMTP({ user, pass, to, replyTo, subject, text, html }) {
         const line = buf.slice(0, pos);
         buf = buf.slice(pos + 2);
         const code   = parseInt(line.slice(0, 3), 10);
-        const isLast = line[3] === ' ';
-        if (!isLast) continue;
+        const isLast = line[3] === ' '; // multi-line responses end when char[3] is space
+
+        if (!isLast) continue; // wait for final line of multi-part reply
+
         if (code >= 500) { socket.destroy(); return reject(new Error(`SMTP ${code}: ${line.slice(4)}`)); }
+
         if      (step === 0 && code === 220) { step = 1; w('EHLO bridge.healthcred.com'); }
         else if (step === 1 && code === 250) {
           step = 2;
@@ -98,7 +112,10 @@ function sendGmailSMTP({ user, pass, to, replyTo, subject, text, html }) {
         else if (step === 2 && code === 235) { step = 3; w(`MAIL FROM:<${user}>`); }
         else if (step === 3 && code === 250) { step = 4; w(`RCPT TO:<${to}>`); }
         else if (step === 4 && code === 250) { step = 5; w('DATA'); }
-        else if (step === 5 && code === 354) { step = 6; socket.write(escapedBody + '\r\n.\r\n'); }
+        else if (step === 5 && code === 354) {
+          step = 6;
+          socket.write(escapedBody + '\r\n.\r\n');
+        }
         else if (step === 6 && code === 250) { step = 7; w('QUIT'); }
         else if (step === 7 && code === 221) { socket.destroy(); resolve({ sent: true }); }
         else if (code >= 400) { socket.destroy(); reject(new Error(`SMTP ${code} at step ${step}: ${line.slice(4)}`)); }
@@ -107,24 +124,63 @@ function sendGmailSMTP({ user, pass, to, replyTo, subject, text, html }) {
   });
 }
 
+// ── Build and send notification email ────────────────────────────────────────
 async function sendNotificationEmail(lead, cfg) {
   const { name, email, amount, message } = lead;
   const ts = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+
   if (!cfg.GMAIL_USER || !cfg.GMAIL_PASS) {
-    console.warn('GMAIL credentials not set — skipping email');
+    console.warn('GMAIL_USER or GMAIL_APP_PASSWORD not set — skipping email');
     return { skipped: true };
   }
+
   const subject = `New Investor Interest — ${amount} — ${name}`;
+
   const text = [
-    'New investor interest submitted on bridge.healthcred.com', '',
-    `Name:    ${name}`, `Email:   ${email}`, `Amount:  ${amount}`,
-    `Message: ${message || '(none)'}`, `Time:    ${ts} ET`, '',
-    `Reply directly to ${email} to follow up.`, '', '— HealthCred Investor Portal',
+    'New investor interest submitted on bridge.healthcred.com',
+    '',
+    `Name:    ${name}`,
+    `Email:   ${email}`,
+    `Amount:  ${amount}`,
+    `Message: ${message || '(none)'}`,
+    `Time:    ${ts} ET`,
+    '',
+    `Reply directly to ${email} to follow up.`,
+    '',
+    '— HealthCred Investor Portal',
   ].join('\n');
-  const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e;"><div style="background:#1a1a2e;padding:20px 24px;border-radius:8px 8px 0 0;"><h2 style="color:#c9a84c;margin:0;font-size:18px;">New Investor Interest</h2></div><div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;"><table style="width:100%;border-collapse:collapse;"><tr><td style="padding:8px 0;color:#666;width:90px;"><strong>Name</strong></td><td>${name}</td></tr><tr><td style="padding:8px 0;color:#666;"><strong>Email</strong></td><td><a href="mailto:${email}" style="color:#c9a84c;">${email}</a></td></tr><tr><td style="padding:8px 0;color:#666;"><strong>Amount</strong></td><td><strong>${amount}</strong></td></tr>${message ? `<tr><td style="padding:8px 0;color:#666;"><strong>Message</strong></td><td>${message}</td></tr>` : ''}<tr><td style="padding:8px 0;color:#666;"><strong>Time</strong></td><td style="font-size:13px;color:#888;">${ts} ET</td></tr></table><div style="margin-top:20px;padding-top:16px;border-top:1px solid #e0e0e0;"><a href="mailto:${email}" style="background:#c9a84c;color:#1a1a2e;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">Reply to ${name} &rarr;</a></div></div></div>`;
-  return sendGmailSMTP({ user: cfg.GMAIL_USER, pass: cfg.GMAIL_PASS, to: cfg.NOTIFY_EMAIL, replyTo: email, subject, text, html });
+
+  const html = `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e;">
+  <div style="background:#1a1a2e;padding:20px 24px;border-radius:8px 8px 0 0;">
+    <h2 style="color:#c9a84c;margin:0;font-size:18px;">New Investor Interest</h2>
+  </div>
+  <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:8px 0;color:#666;width:90px;vertical-align:top;"><strong>Name</strong></td><td style="padding:8px 0;">${name}</td></tr>
+      <tr><td style="padding:8px 0;color:#666;vertical-align:top;"><strong>Email</strong></td><td style="padding:8px 0;"><a href="mailto:${email}" style="color:#c9a84c;">${email}</a></td></tr>
+      <tr><td style="padding:8px 0;color:#666;vertical-align:top;"><strong>Amount</strong></td><td style="padding:8px 0;font-weight:bold;">${amount}</td></tr>
+      ${message ? `<tr><td style="padding:8px 0;color:#666;vertical-align:top;"><strong>Message</strong></td><td style="padding:8px 0;">${message}</td></tr>` : ''}
+      <tr><td style="padding:8px 0;color:#666;vertical-align:top;"><strong>Time</strong></td><td style="padding:8px 0;font-size:13px;color:#888;">${ts} ET</td></tr>
+    </table>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e0e0e0;">
+      <a href="mailto:${email}" style="background:#c9a84c;color:#1a1a2e;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">Reply to ${name} &rarr;</a>
+    </div>
+  </div>
+</div>`;
+
+  return sendGmailSMTP({
+    user:    cfg.GMAIL_USER,
+    pass:    cfg.GMAIL_PASS,
+    to:      cfg.NOTIFY_EMAIL,
+    replyTo: email,
+    subject,
+    text,
+    html,
+  });
 }
 
+// ── DocuSign JWT helpers ───────────────────────────────────────────────────────
 function httpsPost(hostname, path, headers, body) {
   return new Promise((resolve, reject) => {
     const data = typeof body === 'string' ? body : JSON.stringify(body);
@@ -166,6 +222,7 @@ async function sendContributionAgreement(token, investor, cfg) {
   return res.body;
 }
 
+// ── Netlify handler ───────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST')    return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: 'Method not allowed' }) };
@@ -181,9 +238,11 @@ exports.handler = async (event) => {
   const cfg = getConfig();
   const results = { email: null, docusign: null };
 
+  // 1 — Email Chad
   try   { results.email = await sendNotificationEmail({ name, email, amount, message }, cfg); }
   catch (err) { console.error('Email error:', err.message); results.email = { error: err.message }; }
 
+  // 2 — DocuSign contribution agreement (when CA template is configured)
   if (cfg.DS_INT_KEY && cfg.DS_PRIVATE_KEY && cfg.DS_CA_TEMPLATE) {
     try {
       const token = await getDocuSignToken(cfg);
