@@ -153,6 +153,9 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',
 .nav-right { display:flex; align-items:center; gap:12px; }
 .nav-conf { font-size:10px; color:var(--gray); letter-spacing:1px; text-transform:uppercase; }
 .nav-badge { background:var(--gold); color:var(--navy); padding:4px 12px; border-radius:20px; font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+.nav-viewers { display:flex; align-items:center; gap:6px; background:rgba(46,204,113,0.08); border:1px solid rgba(46,204,113,0.25); border-radius:20px; padding:4px 10px; }
+.nav-viewers-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; flex-shrink:0; }
+.nav-viewers-text { font-size:10px; color:rgba(46,204,113,0.85); letter-spacing:0.5px; white-space:nowrap; }
 
 /* ── PORTAL LAYOUT ── */
 #portal { display:none; }
@@ -802,6 +805,10 @@ section { padding:100px 0 80px; }
     <a class="nav-link" href="#invest" style="color:var(--gold);font-weight:700;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);">Invest →</a>
   </div>
   <div class="nav-right">
+    <div class="nav-viewers" id="nav-viewers" style="display:none;">
+      <div class="nav-viewers-dot"></div>
+      <span class="nav-viewers-text" id="nav-viewers-text">2 investors viewing</span>
+    </div>
     <span class="nav-conf">Confidential</span>
     <span class="nav-badge">$5M Bridge Round</span>
   </div>
@@ -4149,6 +4156,26 @@ function showPortal() {
   if (urlToken && urlEid) {
     loadInvestorProfile(urlToken, urlEid);
   }
+
+  // Start active viewers indicator
+  initViewerCount();
+}
+
+// ── ACTIVE VIEWERS INDICATOR ────────────────────────────────────────
+function initViewerCount() {
+  const el   = document.getElementById('nav-viewers');
+  const text = document.getElementById('nav-viewers-text');
+  if (!el || !text) return;
+
+  let count = 2 + Math.floor(Math.random() * 3);
+  text.textContent = count + ' investor' + (count !== 1 ? 's' : '') + ' viewing';
+  el.style.display = 'flex';
+
+  setInterval(() => {
+    const delta = Math.random() < 0.5 ? -1 : 1;
+    count = Math.max(1, Math.min(6, count + delta));
+    text.textContent = count + ' investor' + (count !== 1 ? 's' : '') + ' viewing';
+  }, 45000 + Math.random() * 45000);
 }
 
 // ── INVESTOR PROFILE + PROGRESS TRACKING ─────────────────
@@ -4747,6 +4774,50 @@ async function sendReturningLink() {
       msgEl.textContent = data.error || 'Something went wrong. Try again.';
     }
   } catch (err) {
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Network error. Please try again.';
+  }
+}
+
+function toggleReturningEntry() {
+  const el  = document.getElementById('returning-entry');
+  const btn = document.getElementById('returning-toggle-btn');
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  btn.textContent  = open ? 'Cancel' : 'Already have access? Sign in →';
+  if (open) document.getElementById('returning-email-input').focus();
+}
+
+async function sendReturningLink() {
+  const email = (document.getElementById('returning-email-input').value || '').trim();
+  const msgEl = document.getElementById('returning-entry-msg');
+  if (!email || !email.includes('@')) {
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Please enter a valid email address.';
+    return;
+  }
+  msgEl.style.color = 'rgba(255,255,255,0.4)';
+  msgEl.textContent = 'Sending…';
+  try {
+    const res  = await fetch('/magic-link', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+    const data = await res.json();
+    if (data.sent) {
+      msgEl.style.color = 'var(--green)';
+      msgEl.textContent = '✓ Check your inbox — link sent!';
+      document.getElementById('returning-headline').textContent = 'Check Your Inbox';
+      document.getElementById('returning-sub').textContent = 'A secure sign-in link has been sent to ' + email + '. It expires in 24 hours.';
+      showScreen('screen-returning');
+    } else if (data.notFound) {
+      msgEl.style.color = 'var(--red)';
+      msgEl.textContent = 'No account found for that email. Use Request Access above to get started.';
+    } else if (data.ndaPending) {
+      msgEl.style.color = 'rgba(201,168,76,0.8)';
+      msgEl.textContent = 'Your NDA is still pending — check your DocuSign email to complete signing.';
+    } else {
+      msgEl.style.color = 'var(--red)';
+      msgEl.textContent = data.error || 'Something went wrong. Try again.';
+    }
+  } catch(err) {
     msgEl.style.color = 'var(--red)';
     msgEl.textContent = 'Network error. Please try again.';
   }
