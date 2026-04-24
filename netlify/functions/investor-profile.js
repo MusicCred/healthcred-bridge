@@ -22,7 +22,15 @@
 'use strict';
 
 const crypto = require('crypto');
-const { getStore } = require('@netlify/blobs');
+const { getStore: _getStore } = require('@netlify/blobs');
+
+// Wrapper: uses explicit siteID+token from env when available (bypasses auto-inject).
+function getStore(opts) {
+  const siteID = process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_ACCESS_TOKEN;
+  if (siteID && token) return _getStore({ ...opts, siteID, token });
+  return _getStore(opts);
+}
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -58,132 +66,96 @@ exports.handler = async (event) => {
     body: JSON.stringify(body),
   });
 
-  // ── GET: look up profile by email OR validate access token ───────────────
+  // ── GET: look up investor by email or validate re-access token ────────────
   if (event.httpMethod === 'GET') {
-    const q = event.queryStringParameters || {};
+    const { email, token, eid } = event.queryStringParameters || {};
 
-    // Token validation: ?token=...&eid=...
-    if (q.token && q.eid) {
+    // Token validation path
+    if (token && eid) {
       try {
-        const store = getProfileStore();
-        // We need to find the profile with matching envelopeId
-        const { blobs } = await store.list();
-        for (const { key } of blobs) {
-          const profile = await store.get(key, { type: 'json' });
-          if (profile && profile.envelopeId === q.eid) {
-            const expected = generateAccessToken(q.eid, profile.email);
-            if (expected === q.token) {
-              return json(200, {
-                valid: true,
-                profile: {
-                  name:              profile.name,
-                  email:             profile.email,
-                  company:           profile.company || '',
-                  ndaSigned:         profile.ndaSigned,
-                  ndaSignedAt:       profile.ndaSignedAt,
-                  sectionsViewed:    profile.sectionsViewed || [],
-                  interestSubmitted: profile.interestSubmitted || false,
-                  interestLevel:     profile.interestLevel || null,
-                  accessCount:       profile.accessCount || 1,
-                  lastAccessAt:      profile.lastAccessAt,
-                }
-              });
-            }
-          }
+        const store    = getProfileStore();
+        const list     = await store.list();
+        let   found    = null;
+
+        for (const entry of list.blobs) {
+          const profile = await store.get(entry.key, { type: 'json' });
+          if (profile && profile.envelopeId === eid) { found = profile; break; }
         }
-        return json(200, { valid: false });
+
+        if (!found) return json(404, { valid: false, reason: 'not_found' });
+
+        const expected = generateAccessToken(eid, found.email);
+        if (token !== expected) return json(403, { valid: false, reason: 'invalid_token' });
+
+        // Update last access
+        found.lastAccessAt = new Date().toISOString();
+        found.accessCount  = (found.accessCount || 0) + 1;
+        await store.setJSON(emailKey(found.email), found);
+
+        return json(200, { valid: true, profile: {
+          name:      found.name,
+          email:     found.email,
+          company:   found.company || '',
+          ndaSigned: found.ndaSigned,
+          ndaSignedAt: found.ndaSignedAt,
+        }});
       } catch (err) {
-        console.error('investor-profile GET token error:', err.message);
-        return json(200, { valid: false });
+        return json(500, { valid: false, reason: err.message });
       }
     }
 
-    // Email lookup: ?email=...
-    if (!q.email) {
-      return json(400, { error: 'email or token+eid required' });
-    }
+    // Email lookup path
+    if (email) {
+      try {
+        const store   = getProfileStore();
+        const key     = emailKey(email);
+        const profile = await store.get(key, { type: 'json' });
 
-    try {
-      const store   = getProfileStore();
-      const key     = emailKey(q.email);
-      const profile = await store.get(key, { type: 'json' });
+        if (!profile) return json(200, { exists: false });
 
-      if (!profile) {
-        return json(200, { exists: false });
+        return json(200, {
+          exists:    true,
+          ndaSigned: profile.ndaSigned || false,
+          envelopeId: profile.envelopeId || null,
+          name:      profile.name || '',
+        });
+      } catch (err) {
+        return json(500, { error: err.message });
       }
-
-      return json(200, {
-        exists:            true,
-        name:              profile.name,
-        ndaSigned:         profile.ndaSigned || false,
-        ndaPending:        !!(profile.envelopeId && !profile.ndaSigned),
-        envelopeId:        profile.envelopeId || null,
-        ndaSignedAt:       profile.ndaSignedAt || null,
-        sectionsViewed:    profile.sectionsViewed || [],
-        interestSubmitted: profile.interestSubmitted || false,
-        accessCount:       profile.accessCount || 0,
-        lastAccessAt:      profile.lastAccessAt || null,
-      });
-    } catch (err) {
-      console.error('investor-profile GET error:', err.message);
-      // Blobs not available (local dev) — return not found
-      return json(200, { exists: false });
     }
+
+    return json(400, { error: 'email or (token + eid) required' });
   }
 
-  // ── POST: create or update a profile ────────────────────────────────────
+  // ── POST: create or update profile ────────────────────────────────────────
   if (event.httpMethod === 'POST') {
     let body;
-    try {
-      body = JSON.parse(event.body || '{}');
-    } catch {
-      return json(400, { error: 'Invalid JSON' });
-    }
+    try { body = JSON.parse(event.body || '{}'); }
+    catch { return json(400, { error: 'Invalid JSON' }); }
 
-    const { email } = body;
-    if (!email) return json(400, { error: 'email is required' });
+    const { email, name, company, phone, envelopeId } = body;
+    if (!email) return json(400, { error: 'email required' });
 
     try {
-      const store   = getProfileStore();
-      const key     = emailKey(email);
-      const existing = await store.get(key, { type: 'json' }) || {};
+      const store = getProfileStore();
+      const key   = emailKey(email);
 
-      const now = new Date().toISOString();
-
-      const updated = {
+      // Merge with any existing profile
+      const existing = (await store.get(key, { type: 'json' })) || {};
+      const updated  = {
         ...existing,
-        email:             email.toLowerCase().trim(),
-        name:              body.name              || existing.name              || '',
-        company:           body.company           || existing.company           || '',
-        phone:             body.phone             || existing.phone             || '',
-        envelopeId:        body.envelopeId        || existing.envelopeId        || null,
-        ndaSigned:         body.ndaSigned         !== undefined ? body.ndaSigned : (existing.ndaSigned || false),
-        ndaSignedAt:       body.ndaSignedAt       || existing.ndaSignedAt       || null,
-        accessToken:       body.accessToken       || existing.accessToken       || null,
-        createdAt:         existing.createdAt      || now,
-        lastAccessAt:      body.updateAccess      ? now : (existing.lastAccessAt || now),
-        accessCount:       body.updateAccess      ? ((existing.accessCount || 0) + 1) : (existing.accessCount || 0),
-        sectionsViewed:    body.sectionsViewed
-                             ? [...new Set([...(existing.sectionsViewed || []), ...body.sectionsViewed])]
-                             : (existing.sectionsViewed || []),
-        interestSubmitted: body.interestSubmitted !== undefined ? body.interestSubmitted : (existing.interestSubmitted || false),
-        interestLevel:     body.interestLevel     !== undefined ? body.interestLevel     : (existing.interestLevel     || null),
-        notes:             body.notes             !== undefined ? body.notes             : (existing.notes             || ''),
+        email:     email.toLowerCase().trim(),
+        name:      name      || existing.name      || '',
+        company:   company   || existing.company   || '',
+        phone:     phone     || existing.phone     || '',
+        envelopeId: envelopeId || existing.envelopeId || null,
+        createdAt:  existing.createdAt || new Date().toISOString(),
+        updatedAt:  new Date().toISOString(),
       };
 
       await store.setJSON(key, updated);
-
-      return json(200, { success: true, profile: {
-        name:              updated.name,
-        email:             updated.email,
-        ndaSigned:         updated.ndaSigned,
-        ndaSignedAt:       updated.ndaSignedAt,
-        accessCount:       updated.accessCount,
-        sectionsViewed:    updated.sectionsViewed,
-        interestSubmitted: updated.interestSubmitted,
-      }});
+      return json(200, { saved: true });
     } catch (err) {
-      console.error('investor-profile POST error:', err.message);
       return json(500, { error: err.message });
     }
   }
