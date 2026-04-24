@@ -3896,6 +3896,18 @@ let investorName  = '';
 let currentEnvelopeId = '';
 let pollTimer = null;
 
+// ── LOCALSTORAGE PERSISTENCE ─────────────────────────────
+const LS_KEY = 'hc_bridge_investor';
+function saveInvestorState(state) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function loadInvestorState() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { return null; }
+}
+function clearInvestorState() {
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+}
+
 // ── SCREEN HELPERS ──────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -4040,6 +4052,8 @@ async function signNDA() {
     // Fallback: show waiting screen if no signing URL
     currentEnvelopeId = (data && data.envelopeId) ? data.envelopeId : '';
     document.getElementById('sent-email-display').textContent = email;
+    investorEmail = email;
+    saveInvestorState({ email, name: fullName, envelopeId: currentEnvelopeId, status: 'pending', ts: Date.now() });
     showScreen('screen-sent');
     window.scrollTo(0, 0);
     startPolling();
@@ -4048,6 +4062,8 @@ async function signNDA() {
     console.warn('DocuSign endpoint error — showing confirmation screen');
     currentEnvelopeId = '';
     document.getElementById('sent-email-display').textContent = email;
+    investorEmail = email;
+    saveInvestorState({ email, name: fullName, envelopeId: currentEnvelopeId, status: 'pending', ts: Date.now() });
     showScreen('screen-sent');
     window.scrollTo(0, 0);
     startPolling();
@@ -4131,6 +4147,7 @@ function updatePollText(msg) {
 
 // ── STEP 3: SHOW PORTAL ──────────────────────────────────
 function showPortal() {
+  const _ex = loadInvestorState(); if (_ex) saveInvestorState({ ..._ex, status: 'completed' });
   document.querySelectorAll('.screen').forEach(s => {
     s.style.display = 'none';
     s.classList.remove('active');
@@ -4594,8 +4611,13 @@ function initDonutChart() {
   container.appendChild(svg);
 }
 
-// ── INIT: Show email gate by default on page load ──
-showScreen('screen-email');
+// ── INIT ──────────────────────────────────────────
+(function(){
+  const s=loadInvestorState();
+  if(s&&s.status==='completed'){investorEmail=s.email||'';investorName=s.name||'';showPortal();return;}
+  if(s&&s.status==='pending'&&s.envelopeId){investorEmail=s.email||'';investorName=s.name||'';currentEnvelopeId=s.envelopeId;const e=document.getElementById('sent-email-display');if(e)e.textContent=s.email||'';showScreen('screen-sent');startPolling();return;}
+  showScreen('screen-email');
+})();
 
 // ── COUNTER ANIMATION ──────────────────────────────────
 function animateCounters() {
