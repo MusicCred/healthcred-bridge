@@ -18,7 +18,15 @@
 'use strict';
 
 const crypto = require('crypto');
-const { getStore } = require('@netlify/blobs');
+const { getStore: _getStore } = require('@netlify/blobs');
+
+// Wrapper: uses explicit siteID+token from env when available (bypasses auto-inject).
+function getStore(opts) {
+  const siteID = process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_ACCESS_TOKEN;
+  if (siteID && token) return _getStore({ ...opts, siteID, token });
+  return _getStore(opts);
+}
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -32,17 +40,11 @@ function emailKey(email) {
 
 function generateAccessToken(envelopeId, email) {
   const secret = process.env.ACCESS_TOKEN_SECRET || 'hc-bridge-secret-2024';
-  return crypto
-    .createHmac('sha256', secret)
-    .update(`${envelopeId}:${email.toLowerCase().trim()}`)
-    .digest('hex')
-    .substring(0, 40);
+  return crypto.createHmac('sha256', secret).update(`${envelopeId}:${email.toLowerCase().trim()}`).digest('hex').substring(0, 40);
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: CORS, body: '' };
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
 
   const json = (statusCode, body) => ({
     statusCode,
@@ -56,48 +58,51 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body || '{}'); }
   catch { return json(400, { error: 'Invalid JSON' }); }
 
-  const { token, envelopeId } = body;
+  const { token, envelopeId, sectionsViewed, interestLevel, interestSubmitted } = body;
   if (!token || !envelopeId) return json(400, { error: 'token and envelopeId required' });
 
   try {
     const store = getStore({ name: 'investor-profiles', consistency: 'strong' });
-    const { blobs } = await store.list();
 
-    let profileKey   = null;
-    let profileData  = null;
+    // Find the profile matching this envelope
+    const { blobs } = await store.list();
+    let profile = null;
+    let profileKey = null;
 
     for (const { key } of blobs) {
       const p = await store.get(key, { type: 'json' });
       if (p && p.envelopeId === envelopeId) {
-        const expected = generateAccessToken(envelopeId, p.email);
-        if (expected === token) {
-          profileKey  = key;
-          profileData = p;
-          break;
-        }
+        profile    = p;
+        profileKey = key;
+        break;
       }
     }
 
-    if (!profileData) return json(200, { ok: false, reason: 'profile not found' });
+    if (!profile) return json(404, { error: 'Profile not found' });
 
+    // Verify the token
+    const expected = generateAccessToken(envelopeId, profile.email);
+    if (token !== expected) return json(403, { error: 'Invalid token' });
+
+    // Merge updates
     const now = new Date().toISOString();
-    const updated = {
-      ...profileData,
-      lastAccessAt:      now,
-      accessCount:       (profileData.accessCount || 0) + 1,
-      sectionsViewed:    body.sectionsViewed
-        ? [...new Set([...(profileData.sectionsViewed || []), ...body.sectionsViewed])]
-        : (profileData.sectionsViewed || []),
-      interestLevel:     body.interestLevel     !== undefined ? body.interestLevel     : profileData.interestLevel,
-      interestSubmitted: body.interestSubmitted !== undefined ? body.interestSubmitted : profileData.interestSubmitted,
-    };
+    profile.lastAccessAt = now;
+    profile.accessCount  = (profile.accessCount || 0) + 1;
 
-    await store.setJSON(profileKey, updated);
-    return json(200, { ok: true });
+    if (Array.isArray(sectionsViewed) && sectionsViewed.length > 0) {
+      const existing = new Set(profile.sectionsViewed || []);
+      sectionsViewed.forEach(s => existing.add(s));
+      profile.sectionsViewed = Array.from(existing);
+    }
+
+    if (interestLevel !== undefined) profile.interestLevel = interestLevel;
+    if (interestSubmitted !== undefined) profile.interestSubmitted = interestSubmitted;
+
+    await store.setJSON(profileKey, profile);
+    return json(200, { updated: true });
 
   } catch (err) {
     console.error('track-progress error:', err.message);
-    // Silent fail — never interrupt investor experience over analytics
-    return json(200, { ok: false, error: err.message });
+    return json(500, { error: err.message });
   }
 };
