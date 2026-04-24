@@ -25,7 +25,15 @@
 
 const crypto = require('crypto');
 const tls    = require('tls');
-const { getStore } = require('@netlify/blobs');
+const { getStore: _getStore } = require('@netlify/blobs');
+
+// Wrapper: uses explicit siteID+token from env when available (bypasses auto-inject).
+function getStore(opts) {
+  const siteID = process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_ACCESS_TOKEN;
+  if (siteID && token) return _getStore({ ...opts, siteID, token });
+  return _getStore(opts);
+}
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -159,7 +167,6 @@ exports.handler = async (event) => {
       return json(200, { pending: true, envelopeId: profile.envelopeId || null });
     }
 
-    // Generate fresh re-access token (same HMAC formula as docusign-webhook)
     const token     = generateAccessToken(profile.envelopeId, profile.email);
     const accessUrl = `${cfg.PORTAL_URL}/?access=${token}&eid=${profile.envelopeId}`;
     const firstName = (profile.name || 'there').split(' ')[0];
@@ -185,25 +192,7 @@ exports.handler = async (event) => {
       'Direct: +1 (949) 866-3839 | chad@healthcred.com',
     ].join('\n');
 
-    const html = `
-<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;">
-  <div style="background:#0D1B2A;padding:24px 32px;border-radius:10px 10px 0 0;text-align:center;">
-    <div style="font-size:20px;font-weight:900;color:#C9A84C;letter-spacing:2px;">HEALTHCRED</div>
-    <div style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:3px;margin-top:4px;">CORRECTIONS INFRASTRUCTURE</div>
-  </div>
-  <div style="background:#f9f8f5;padding:32px;border-radius:0 0 10px 10px;border:1px solid #e8e0d0;border-top:none;">
-    <p style="font-size:15px;color:#0D1B2A;margin-top:0;">Hi ${firstName},</p>
-    <p style="color:#333;line-height:1.6;margin-bottom:28px;">Here is your secure re-access link to the HealthCred investor portal. Your NDA was executed on <strong>${signedOn}</strong>.</p>
-    <div style="text-align:center;margin:0 0 28px;">
-      <a href="${accessUrl}" style="display:inline-block;background:#C9A84C;color:#0D1B2A;padding:15px 34px;border-radius:8px;font-weight:900;font-size:14px;text-decoration:none;letter-spacing:1px;">RE-ENTER THE PORTAL →</a>
-    </div>
-    <p style="font-size:11px;color:#999;text-align:center;margin-bottom:24px;">This link is unique to you. Please do not share it.</p>
-    <div style="border-top:1px solid #e8e0d0;padding-top:18px;font-size:12px;color:#666;line-height:1.8;">
-      <strong>Chad R. LaBoy</strong> | President &amp; Founder | HealthCred<br>
-      Direct: +1 (949) 866-3839 | <a href="mailto:chad@healthcred.com" style="color:#C9A84C;">chad@healthcred.com</a>
-    </div>
-  </div>
-</div>`;
+    const html = `\n<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;">\n  <div style="background:#0D1B2A;padding:24px 32px;border-radius:10px 10px 0 0;text-align:center;">\n    <div style="font-size:20px;font-weight:900;color:#C9A84C;letter-spacing:2px;">HEALTHCRED</div>\n    <div style="font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:3px;margin-top:4px;">CORRECTIONS INFRASTRUCTURE</div>\n  </div>\n  <div style="background:#f9f8f5;padding:32px;border-radius:0 0 10px 10px;border:1px solid #e8e0d0;border-top:none;">\n    <p style="font-size:15px;color:#0D1B2A;margin-top:0;">Hi ${firstName},</p>\n    <p style="color:#333;line-height:1.6;margin-bottom:28px;">Here is your secure re-access link to the HealthCred investor portal. Your NDA was executed on <strong>${signedOn}</strong>.</p>\n    <div style="text-align:center;margin:0 0 28px;">\n      <a href="${accessUrl}" style="display:inline-block;background:#C9A84C;color:#0D1B2A;padding:15px 34px;border-radius:8px;font-weight:900;font-size:14px;text-decoration:none;letter-spacing:1px;">RE-ENTER THE PORTAL →</a>\n    </div>\n    <p style="font-size:11px;color:#999;text-align:center;margin-bottom:24px;">This link is unique to you. Please do not share it.</p>\n    <div style="border-top:1px solid #e8e0d0;padding-top:18px;font-size:12px;color:#666;line-height:1.8;">\n      <strong>Chad R. LaBoy</strong> | President &amp; Founder | HealthCred<br>\n      Direct: +1 (949) 866-3839 | <a href="mailto:chad@healthcred.com" style="color:#C9A84C;">chad@healthcred.com</a>\n    </div>\n  </div>\n</div>`;
 
     await sendGmailSMTP({
       user:    cfg.GMAIL_USER,
